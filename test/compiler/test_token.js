@@ -49,4 +49,29 @@ describe('compiler/token', function () {
     testEql('"fdkkkfd', {error: 'SyntaxError: Unexpected end of input', line: 0, column: 8});
   });
 
+  it('符号', function () {
+    testEql('+-*/', [{type: WORD.SYMBLE, line: 0, column: 0, word: '+'},
+                     {type: WORD.SYMBLE, line: 0, column: 1, word: '-'},
+                     {type: WORD.SYMBLE, line: 0, column: 2, word: '*'},
+                     {type: WORD.SYMBLE, line: 0, column: 3, word: '/'}]);
+  });
+
+  it('正常单词', function () {
+    testEql('hello', [{type: WORD.WORD, line: 0, column: 0, word: 'hello'}]);
+    testEql('hello34', [{type: WORD.WORD, line: 0, column: 0, word: 'hello34'}]);
+    testEql('hello_s', [{type: WORD.WORD, line: 0, column: 0, word: 'hello_s'}]);
+    testEql('_hello', [{type: WORD.WORD, line: 0, column: 0, word: '_hello'}]);
+    testEql('$', [{type: WORD.WORD, line: 0, column: 0, word: '$'}]);
+    testEql('_', [{type: WORD.WORD, line: 0, column: 0, word: '_'}]);
+    testEql('$$_f', [{type: WORD.WORD, line: 0, column: 0, word: '$$_f'}]);
+  });
+
+  it('异常单词', function () {
+    testEql('0abcd', {error: 'SyntaxError: Unexpected token a', line: 0, column: 1});
+  });
+
+  it('综合测试', function () {
+    
+  });
+
 });
