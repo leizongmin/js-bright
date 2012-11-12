@@ -70,8 +70,29 @@ describe('compiler/token', function () {
     testEql('0abcd', {error: 'SyntaxError: Unexpected token a', line: 0, column: 1});
   });
 
-  it('综合测试', function () {
-    
+  it('单行综合测试', function () {
+    testEql('if a + b = 10', [{type: WORD.WORD, line: 0, column: 0, word: 'if'},
+                              {type: WORD.WORD, line: 0, column: 3, word: 'a'},
+                              {type: WORD.SYMBLE, line: 0, column: 5, word: '+'},
+                              {type: WORD.WORD, line: 0, column: 7, word: 'b'},
+                              {type: WORD.SYMBLE, line: 0, column: 9, word: '='},
+                              {type: WORD.NUMBER, line: 0, column: 11, word: '10'},]);
+    testEql('if a+b=10', [{type: WORD.WORD, line: 0, column: 0, word: 'if'},
+                              {type: WORD.WORD, line: 0, column: 3, word: 'a'},
+                              {type: WORD.SYMBLE, line: 0, column: 4, word: '+'},
+                              {type: WORD.WORD, line: 0, column: 5, word: 'b'},
+                              {type: WORD.SYMBLE, line: 0, column: 6, word: '='},
+                              {type: WORD.NUMBER, line: 0, column: 7, word: '10'},]);
+    testEql('"abc" + 50 = "abc50"', [{type: WORD.STRING, line: 0, column: 0, word: 'abc'},
+                                     {type: WORD.SYMBLE, line: 0, column: 6, word: '+'},
+                                     {type: WORD.NUMBER, line: 0, column: 8, word: '50'},
+                                     {type: WORD.SYMBLE, line: 0, column: 11, word: '='},
+                                     {type: WORD.STRING, line: 0, column: 13, word: 'abc50'}]);
+    testEql('"abc"+50="abc50"', [{type: WORD.STRING, line: 0, column: 0, word: 'abc'},
+                                     {type: WORD.SYMBLE, line: 0, column: 5, word: '+'},
+                                     {type: WORD.NUMBER, line: 0, column: 6, word: '50'},
+                                     {type: WORD.SYMBLE, line: 0, column: 8, word: '='},
+                                     {type: WORD.STRING, line: 0, column: 9, word: 'abc50'}]);
   });
 
 });
