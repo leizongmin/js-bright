@@ -95,4 +95,24 @@ describe('compiler/token', function () {
                                      {type: WORD.STRING, line: 0, column: 9, word: 'abc50'}]);
   });
 
+  it('多行综合测试', function () {
+    testEql('if (a+10="123") {\n\tok()\n} else {\n\texit\n}', [{type: WORD.WORD, line: 0, column: 0, word: 'if'},
+                                                               {type: WORD.SYMBLE, line: 0, column: 3, word: '('},
+                                                               {type: WORD.WORD, line: 0, column: 4, word: 'a'},
+                                                               {type: WORD.SYMBLE, line: 0, column: 5, word: '+'},
+                                                               {type: WORD.NUMBER, line: 0, column: 6, word: '10'},
+                                                               {type: WORD.SYMBLE, line: 0, column: 8, word: '='},
+                                                               {type: WORD.STRING, line: 0, column: 9, word: '123'},
+                                                               {type: WORD.SYMBLE, line: 0, column: 14, word: ')'},
+                                                               {type: WORD.SYMBLE, line: 0, column: 16, word: '{'},
+                                                               {type: WORD.WORD, line: 1, column: 1, word: 'ok'},
+                                                               {type: WORD.SYMBLE, line: 1, column: 3, word: '('},
+                                                               {type: WORD.SYMBLE, line: 1, column: 4, word: ')'},
+                                                               {type: WORD.SYMBLE, line: 2, column: 0, word: '}'},
+                                                               {type: WORD.WORD, line: 2, column: 2, word: 'else'},
+                                                               {type: WORD.SYMBLE, line: 2, column: 7, word: '{'},
+                                                               {type: WORD.WORD, line: 3, column: 1, word: 'exit'},
+                                                               {type: WORD.SYMBLE, line: 4, column: 0, word: '}'},]);
+  });
+
 });
