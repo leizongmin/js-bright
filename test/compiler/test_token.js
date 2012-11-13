@@ -64,13 +64,13 @@ describe('compiler/token', function () {
     });
 
     it('正常单词', function () {
-      testEql('hello', [{type: WORD.WORD, line: 0, column: 0, word: 'hello'}]);
-      testEql('hello34', [{type: WORD.WORD, line: 0, column: 0, word: 'hello34'}]);
-      testEql('hello_s', [{type: WORD.WORD, line: 0, column: 0, word: 'hello_s'}]);
-      testEql('_hello', [{type: WORD.WORD, line: 0, column: 0, word: '_hello'}]);
-      testEql('$', [{type: WORD.WORD, line: 0, column: 0, word: '$'}]);
-      testEql('_', [{type: WORD.WORD, line: 0, column: 0, word: '_'}]);
-      testEql('$$_f', [{type: WORD.WORD, line: 0, column: 0, word: '$$_f'}]);
+      testEql('hello', [{type: WORD.NAME, line: 0, column: 0, word: 'hello'}]);
+      testEql('hello34', [{type: WORD.NAME, line: 0, column: 0, word: 'hello34'}]);
+      testEql('hello_s', [{type: WORD.NAME, line: 0, column: 0, word: 'hello_s'}]);
+      testEql('_hello', [{type: WORD.NAME, line: 0, column: 0, word: '_hello'}]);
+      testEql('$', [{type: WORD.NAME, line: 0, column: 0, word: '$'}]);
+      testEql('_', [{type: WORD.NAME, line: 0, column: 0, word: '_'}]);
+      testEql('$$_f', [{type: WORD.NAME, line: 0, column: 0, word: '$$_f'}]);
     });
 
     it('异常单词', function () {
@@ -81,7 +81,7 @@ describe('compiler/token', function () {
       testEql('//abcd', [{type: WORD.COMMENT, line: 0, column: 0, word: '//abcd'}]);
       testEql('//abcd//sss', [{type: WORD.COMMENT, line: 0, column: 0, word: '//abcd//sss'}]);
       testEql('//abc\nabc', [{type: WORD.COMMENT, line: 0, column: 0, word: '//abc'},
-                             {type: WORD.WORD, line: 1, column: 0, word: 'abc'}]);
+                             {type: WORD.NAME, line: 1, column: 0, word: 'abc'}]);
     });
 
     it('多行注释', function () {
@@ -92,16 +92,16 @@ describe('compiler/token', function () {
     });
 
     it('单行综合测试', function () {
-      testEql('if a + b = 10', [{type: WORD.WORD, line: 0, column: 0, word: 'if'},
-                                {type: WORD.WORD, line: 0, column: 3, word: 'a'},
+      testEql('if a + b = 10', [{type: WORD.NAME, line: 0, column: 0, word: 'if'},
+                                {type: WORD.NAME, line: 0, column: 3, word: 'a'},
                                 {type: WORD.SYMBLE, line: 0, column: 5, word: '+'},
-                                {type: WORD.WORD, line: 0, column: 7, word: 'b'},
+                                {type: WORD.NAME, line: 0, column: 7, word: 'b'},
                                 {type: WORD.SYMBLE, line: 0, column: 9, word: '='},
                                 {type: WORD.NUMBER, line: 0, column: 11, word: '10'},]);
-      testEql('if a+b=10', [{type: WORD.WORD, line: 0, column: 0, word: 'if'},
-                            {type: WORD.WORD, line: 0, column: 3, word: 'a'},
+      testEql('if a+b=10', [{type: WORD.NAME, line: 0, column: 0, word: 'if'},
+                            {type: WORD.NAME, line: 0, column: 3, word: 'a'},
                             {type: WORD.SYMBLE, line: 0, column: 4, word: '+'},
-                            {type: WORD.WORD, line: 0, column: 5, word: 'b'},
+                            {type: WORD.NAME, line: 0, column: 5, word: 'b'},
                             {type: WORD.SYMBLE, line: 0, column: 6, word: '='},
                             {type: WORD.NUMBER, line: 0, column: 7, word: '10'},]);
       testEql('"abc" + 50 = "abc50"', [{type: WORD.STRING, line: 0, column: 0, word: '"abc"'},
@@ -114,26 +114,26 @@ describe('compiler/token', function () {
                                     {type: WORD.NUMBER, line: 0, column: 6, word: '50'},
                                     {type: WORD.SYMBLE, line: 0, column: 8, word: '='},
                                     {type: WORD.STRING, line: 0, column: 9, word: '"abc50"'}]);
-      //testEql('abc;//abc', [{type: WORD.WORD, }])
+      //testEql('abc;//abc', [{type: WORD.NAME, }])
     });
 
     it('多行综合测试', function () {
-      testEql('if (a+10="123") {\n\tok()\n} else {\n\texit\n}', [{type: WORD.WORD, line: 0, column: 0, word: 'if'},
+      testEql('if (a+10="123") {\n\tok()\n} else {\n\texit\n}', [{type: WORD.NAME, line: 0, column: 0, word: 'if'},
                                                                  {type: WORD.SYMBLE, line: 0, column: 3, word: '('},
-                                                                 {type: WORD.WORD, line: 0, column: 4, word: 'a'},
+                                                                 {type: WORD.NAME, line: 0, column: 4, word: 'a'},
                                                                  {type: WORD.SYMBLE, line: 0, column: 5, word: '+'},
                                                                  {type: WORD.NUMBER, line: 0, column: 6, word: '10'},
                                                                  {type: WORD.SYMBLE, line: 0, column: 8, word: '='},
                                                                  {type: WORD.STRING, line: 0, column: 9, word: '"123"'},
                                                                  {type: WORD.SYMBLE, line: 0, column: 14, word: ')'},
                                                                  {type: WORD.SYMBLE, line: 0, column: 16, word: '{'},
-                                                                 {type: WORD.WORD, line: 1, column: 1, word: 'ok'},
+                                                                 {type: WORD.NAME, line: 1, column: 1, word: 'ok'},
                                                                  {type: WORD.SYMBLE, line: 1, column: 3, word: '('},
                                                                  {type: WORD.SYMBLE, line: 1, column: 4, word: ')'},
                                                                  {type: WORD.SYMBLE, line: 2, column: 0, word: '}'},
-                                                                 {type: WORD.WORD, line: 2, column: 2, word: 'else'},
+                                                                 {type: WORD.NAME, line: 2, column: 2, word: 'else'},
                                                                  {type: WORD.SYMBLE, line: 2, column: 7, word: '{'},
-                                                                 {type: WORD.WORD, line: 3, column: 1, word: 'exit'},
+                                                                 {type: WORD.NAME, line: 3, column: 1, word: 'exit'},
                                                                  {type: WORD.SYMBLE, line: 4, column: 0, word: '}'},]);
     });
   });
