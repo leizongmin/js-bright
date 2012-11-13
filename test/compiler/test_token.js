@@ -8,6 +8,11 @@ var token = require('../../lib/compiler/token');
 var define = require('../../lib/compiler/define');
 
 
+var line = function () {
+  console.log('------------------------------------------------------------');
+};
+
+
 describe('compiler/token', function () {
 
   describe('_parse() 原始分词', function () {
@@ -72,6 +77,20 @@ describe('compiler/token', function () {
       testEql('0abcd', {error: 'SyntaxError: Unexpected token a', line: 0, column: 1});
     });
 
+    it('单行注释', function () {
+      testEql('//abcd', [{type: WORD.COMMENT, line: 0, column: 0, word: '//abcd'}]);
+      testEql('//abcd//sss', [{type: WORD.COMMENT, line: 0, column: 0, word: '//abcd//sss'}]);
+      testEql('//abc\nabc', [{type: WORD.COMMENT, line: 0, column: 0, word: '//abc'},
+                             {type: WORD.WORD, line: 1, column: 0, word: 'abc'}]);
+    });
+
+    it('多行注释', function () {
+      testEql('/*hello*/', [{type: WORD.COMMENT, line: 0, column: 0, word: '/*hello*/'}]);
+      testEql('/*how*//*are*//*you*/', [{type: WORD.COMMENT, line: 0, column: 0, word: '/*how*/'},
+                                        {type: WORD.COMMENT, line: 0, column: 7, word: '/*are*/'},
+                                        {type: WORD.COMMENT, line: 0, column: 14, word: '/*you*/'}]);
+    });
+
     it('单行综合测试', function () {
       testEql('if a + b = 10', [{type: WORD.WORD, line: 0, column: 0, word: 'if'},
                                 {type: WORD.WORD, line: 0, column: 3, word: 'a'},
@@ -80,21 +99,22 @@ describe('compiler/token', function () {
                                 {type: WORD.SYMBLE, line: 0, column: 9, word: '='},
                                 {type: WORD.NUMBER, line: 0, column: 11, word: '10'},]);
       testEql('if a+b=10', [{type: WORD.WORD, line: 0, column: 0, word: 'if'},
-                                {type: WORD.WORD, line: 0, column: 3, word: 'a'},
-                                {type: WORD.SYMBLE, line: 0, column: 4, word: '+'},
-                                {type: WORD.WORD, line: 0, column: 5, word: 'b'},
-                                {type: WORD.SYMBLE, line: 0, column: 6, word: '='},
-                                {type: WORD.NUMBER, line: 0, column: 7, word: '10'},]);
+                            {type: WORD.WORD, line: 0, column: 3, word: 'a'},
+                            {type: WORD.SYMBLE, line: 0, column: 4, word: '+'},
+                            {type: WORD.WORD, line: 0, column: 5, word: 'b'},
+                            {type: WORD.SYMBLE, line: 0, column: 6, word: '='},
+                            {type: WORD.NUMBER, line: 0, column: 7, word: '10'},]);
       testEql('"abc" + 50 = "abc50"', [{type: WORD.STRING, line: 0, column: 0, word: '"abc"'},
                                        {type: WORD.SYMBLE, line: 0, column: 6, word: '+'},
                                        {type: WORD.NUMBER, line: 0, column: 8, word: '50'},
                                        {type: WORD.SYMBLE, line: 0, column: 11, word: '='},
                                        {type: WORD.STRING, line: 0, column: 13, word: '"abc50"'}]);
       testEql('"abc"+50="abc50"', [{type: WORD.STRING, line: 0, column: 0, word: '"abc"'},
-                                       {type: WORD.SYMBLE, line: 0, column: 5, word: '+'},
-                                       {type: WORD.NUMBER, line: 0, column: 6, word: '50'},
-                                       {type: WORD.SYMBLE, line: 0, column: 8, word: '='},
-                                       {type: WORD.STRING, line: 0, column: 9, word: '"abc50"'}]);
+                                    {type: WORD.SYMBLE, line: 0, column: 5, word: '+'},
+                                    {type: WORD.NUMBER, line: 0, column: 6, word: '50'},
+                                    {type: WORD.SYMBLE, line: 0, column: 8, word: '='},
+                                    {type: WORD.STRING, line: 0, column: 9, word: '"abc50"'}]);
+      //testEql('abc;//abc', [{type: WORD.WORD, }])
     });
 
     it('多行综合测试', function () {
