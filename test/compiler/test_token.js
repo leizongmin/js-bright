@@ -89,6 +89,10 @@ describe('compiler/token', function () {
       testEql('/*how*//*are*//*you*/', [{type: WORD.COMMENT, line: 0, column: 0, text: '/*how*/'},
                                         {type: WORD.COMMENT, line: 0, column: 7, text: '/*are*/'},
                                         {type: WORD.COMMENT, line: 0, column: 14, text: '/*you*/'}]);
+      testEql('/*\nabc\n*//*\nefg\n*/', [{type: WORD.COMMENT, line: 0, column: 0, text: '/*\nabc\n*/'},
+                                         {type: WORD.COMMENT, line: 2, column: 2, text: '/*\nefg\n*/'}]);
+      testEql('/*\nabc*/\nabc', [{type: WORD.COMMENT, line: 0, column: 0, text: '/*\nabc*/'},
+                                 {type: WORD.NAME, line: 2, column: 0, text: 'abc'}]);
     });
 
     it('单行综合测试', function () {
@@ -116,7 +120,7 @@ describe('compiler/token', function () {
                                     {type: WORD.STRING, line: 0, column: 9, text: '"abc50"'}]);
       testEql('abc;//abc', [{type: WORD.NAME, line: 0, column: 0, text: 'abc'},
                             {type: WORD.SYMBLE, line: 0, column: 3, text: ';'},
-                            {type: WORD.COMMENT, line: 0, column: 4, text: '//abc'}])
+                            {type: WORD.COMMENT, line: 0, column: 4, text: '//abc'}]);
     });
 
     it('多行综合测试', function () {
@@ -137,6 +141,14 @@ describe('compiler/token', function () {
                                                                  {type: WORD.SYMBLE, line: 2, column: 7, text: '{'},
                                                                  {type: WORD.NAME, line: 3, column: 1, text: 'exit'},
                                                                  {type: WORD.SYMBLE, line: 4, column: 0, text: '}'},]);
+      testEql('call(/* abc */ ok) // not ok\n/*\nhaha\n*/www', [{type: WORD.NAME, line: 0, column: 0, text: 'call'},
+                                                                {type: WORD.SYMBLE, line: 0, column: 4, text: '('},
+                                                                {type: WORD.COMMENT, line: 0, column: 5, text: '/* abc */'},
+                                                                {type: WORD.NAME, line: 0, column: 15, text: 'ok'},
+                                                                {type: WORD.SYMBLE, line: 0, column: 17, text: ')'},
+                                                                {type: WORD.COMMENT, line: 0, column: 19, text: '// not ok'},
+                                                                {type: WORD.COMMENT, line: 1, column: 0, text: '/*\nhaha\n*/'},
+                                                                {type: WORD.NAME, line: 3, column: 2, text: 'www'},]);
     });
   });
 
