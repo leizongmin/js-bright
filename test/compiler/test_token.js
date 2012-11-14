@@ -186,6 +186,15 @@ describe('compiler/token', function () {
                                   {type: WORD.SYMBLE, line: 0, column: 14, text: '}'}]);
     });
 
+    it('特殊数字', function () {
+      testEql('.567', [{type: WORD.NUMBER, line: 0, column: 0, text: '.567'}]);
+      testEql('abc.123', [{type: WORD.IDENTIFIER, line: 0, column: 0, text: 'abc'},
+                          {type: WORD.SYMBLE, line: 0, column: 3, text: '.'},
+                          {type: WORD.NUMBER, line: 0, column: 4, text: '123'}]);
+      testEql('+.5', [{type: WORD.SYMBLE, line: 0, column: 0, text: '+'},
+                      {type: WORD.NUMBER, line: 0, column: 1, text: '.5'}]);
+    });
+
   });
 
 });
