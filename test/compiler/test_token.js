@@ -47,9 +47,9 @@ describe('compiler/token', function () {
 
     it('正常字符串', function () {
       testEql('"hello=jkfjkfs"', [{type: WORD.STRING, line: 0, column: 0, text: '"hello=jkfjkfs"'}]);
-      testEql('"hello=\nd\njkfjkfs"', [{type: WORD.STRING, line: 0, column: 0, text: '"hello=\nd\njkfjkfs"'}]);
+      testEql('"hello=\nd\njkfjkfs"', [{type: WORD.STRING, line: 0, column: 0, text: '"hello=\\nd\\njkfjkfs"'}]);
       testEql('"hello=\\\"jkfjkfs"', [{type: WORD.STRING, line: 0, column: 0, text: '"hello=\\\"jkfjkfs"'}]);
-      testEql('"abc\\"\'\r\n\t\\""', [{type: WORD.STRING, line: 0, column: 0, text: '"abc\\"\'\r\n\t\\""'}]);
+      testEql('"abc\\"\'\r\n\t\\""', [{type: WORD.STRING, line: 0, column: 0, text: '"abc\\"\'\\r\\n\t\\""'}]);
     });
 
     it('异常字符串', function () {
