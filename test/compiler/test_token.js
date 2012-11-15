@@ -195,6 +195,14 @@ describe('compiler/token', function () {
                       {type: WORD.NUMBER, line: 0, column: 1, text: '.5'}]);
     });
 
+    it('多个符号', function () {
+      testEql('++', [{type: WORD.SYMBLE, line: 0, column: 0, text: '++'}]);
+      testEql('++<=', [{type: WORD.SYMBLE, line: 0, column: 0, text: '++'},
+                       {type: WORD.SYMBLE, line: 0, column: 2, text: '<='}]);
+      testEql('+\n+', [{type: WORD.SYMBLE, line: 0, column: 0, text: '+'},
+                       {type: WORD.SYMBLE, line: 1, column: 0, text: '+'}]);
+    });
+
   });
 
 });
