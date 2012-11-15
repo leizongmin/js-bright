@@ -17,6 +17,11 @@ __continue__
 __return__
 __await__
 __defer__
+__true__
+__false__
+__null__
+__undefined__
+__NaN__
 
 
 ## 范例
