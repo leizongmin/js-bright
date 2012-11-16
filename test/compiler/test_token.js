@@ -161,20 +161,20 @@ describe('compiler/token', function () {
     };
 
     it('关键词处理 - 正常情况', function () {
-      testEql('false', [{type: WORD.KEYWORD, line: 0, column: 0, text: 'false'}]);
+      testEql('false', [{type: WORD.IDENTIFIER, line: 0, column: 0, text: 'false'}]);
       testEql('false.true', [{type: WORD.IDENTIFIER, line: 0, column: 0, text: 'false'},
                              {type: WORD.SYMBLE, line: 0, column: 5, text: '.'},
                              {type: WORD.IDENTIFIER, line: 0, column: 6, text: 'true'}]);
       testEql('{false:true}', [{type: WORD.SYMBLE, line: 0, column: 0, text: '{'},
                                {type: WORD.IDENTIFIER, line: 0, column: 1, text: 'false'},
                                {type: WORD.SYMBLE, line: 0, column: 6, text: ':'},
-                               {type: WORD.KEYWORD, line: 0, column: 7, text: 'true'},
+                               {type: WORD.IDENTIFIER, line: 0, column: 7, text: 'true'},
                                {type: WORD.SYMBLE, line: 0, column: 11, text: '}'}]);
-      testEql('false?true:false', [{type: WORD.KEYWORD, line: 0, column: 0, text: 'false'},
+      testEql('false?true:false', [{type: WORD.IDENTIFIER, line: 0, column: 0, text: 'false'},
                                   {type: WORD.SYMBLE, line: 0, column: 5, text: '?'},
-                                  {type: WORD.KEYWORD, line: 0, column: 6, text: 'true'},
+                                  {type: WORD.IDENTIFIER, line: 0, column: 6, text: 'true'},
                                   {type: WORD.SYMBLE, line: 0, column: 10, text: ':'},
-                                  {type: WORD.KEYWORD, line: 0, column: 11, text: 'false'}]);
+                                  {type: WORD.IDENTIFIER, line: 0, column: 11, text: 'false'}]);
       testEql('{in:in,for:for}', [{type: WORD.SYMBLE, line: 0, column: 0, text: '{'},
                                   {type: WORD.IDENTIFIER, line: 0, column: 1, text: 'in'},
                                   {type: WORD.SYMBLE, line: 0, column: 3, text: ':'},
