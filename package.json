@@ -1,0 +1,26 @@
+{
+  "name":           "easyscript",
+  "main":           "./lib/index.js",
+  "version":        "0.0.1",
+  "description":    "Async/Await support",
+  "keywords":       ["async", "await"],
+  "author":         "Lei Zongmin <leizongmin@gmail.com>",
+  "contributors": [
+    {"name": "Lei Zongmin", "email": "leizongmin@gmail.com"}
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/leizongmin/easyscript.git"
+  },
+  "engines": {
+    "node":         ">= 0.8.0"
+  },
+  "dependencies":	{},
+  "devDependencies": {
+    "should":       "*",
+    "mocha":        ">= 1.2"
+  },
+  "scripts": {
+    "test":         "mocha -t 5000"
+  }
+}
