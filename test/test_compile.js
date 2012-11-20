@@ -87,4 +87,90 @@ describe('compile', function () {
     });
   });
 
+  describe('await', function () {
+    it('等待异步调用（无返回值，不带括号）', function (done) {
+      var async = function (callback) {
+        process.nextTick(function () {
+          callback(null);
+        });
+      };
+      var fn = compile('argument async\nawait async');
+      fn(async, function (err) {
+        should.equal(err, null);
+        done();
+      });
+    });
+    it('等待异步调用（无返回值，有括号）', function (done) {
+      var async = function (callback) {
+        process.nextTick(function () {
+          callback(null);
+        });
+      };
+      var fn = compile('argument async\nawait async()');
+      fn(async, function (err) {
+        should.equal(err, null);
+        done();
+      });
+    });
+    
+    it('等待异步调用（有返回值）', function (done) {
+      var async = function (callback) {
+        process.nextTick(function () {
+          callback(null, 8787);
+        });
+      };
+      var fn = compile('argument async\nlet a = await async\nreturn a');
+      fn(async, function (err, ret) {
+        should.equal(err, null);
+        ret.should.equal(8787);
+        done();
+      });
+    });
+    it('等待异步调用（多个返回值）', function (done) {
+      var async = function (callback) {
+        process.nextTick(function () {
+          callback(null, 8, 7, 9);
+        });
+      };
+      var fn = compile('argument async\nlet a b c = await async\nreturn a b c');
+      fn(async, function (err, a, b, c) {
+        should.equal(err, null);
+        a.should.equal(8);
+        b.should.equal(7);
+        c.should.equal(9);
+        done();
+      });
+    });
+    it('等待异步调用（多个返回值，用逗号分隔）', function (done) {
+      var async = function (callback) {
+        process.nextTick(function () {
+          callback(null, 8, 7, 9);
+        });
+      };
+      var fn = compile('argument async\nlet a,b, c = await async\nreturn a b c');
+      fn(async, function (err, a, b, c) {
+        should.equal(err, null);
+        a.should.equal(8);
+        b.should.equal(7);
+        c.should.equal(9);
+        done();
+      });
+    });
+    it('等待异步调用（用参数）', function (done) {
+      var async = function (a, b, c, callback) {
+        process.nextTick(function () {
+          callback(null, c, b, a);
+        });
+      };
+      var fn = compile('argument async\nlet a,b,c = await async(1,2,3)\nreturn a,b,c');
+      fn(async, function (err, a, b, c) {
+        should.equal(err, null);
+        a.should.equal(3);
+        b.should.equal(2);
+        c.should.equal(1);
+        done();
+      });
+    });
+  });
+
 });
