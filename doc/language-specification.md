@@ -38,7 +38,7 @@ var a, b, c                       // 定义变量
 /* 程序主体部分 */
 
 // 定义延迟执行（在程序返回前执行，无论是否出错），可以为单行或多行
-defer console.log('exit')
+defer console.log('exit') // 执行某个函数，不能是其他语句
 defer {
   console.log('wahaha')
   console.log('exit')

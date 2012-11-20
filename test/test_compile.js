@@ -112,7 +112,7 @@ describe('compile', function () {
         done();
       });
     });
-    
+
     it('等待异步调用（有返回值）', function (done) {
       var async = function (callback) {
         process.nextTick(function () {
@@ -170,6 +170,51 @@ describe('compile', function () {
         c.should.equal(1);
         done();
       });
+    });
+  });
+
+  describe('defer', function () {
+    it('单行函数调用', function (done) {
+      var hasCall = false;
+      var call = function () {
+        hasCall = true;
+      };
+      var fn = compile('argument call\ndefer call\nreturn 123');
+      fn(call, function (err, ret) {
+        should.equal(err, null);
+        ret.should.equal(123);
+        hasCall.should.equal(true);
+        done();
+      });
+    });
+    it('单行函数调用（带括号）', function (done) {
+      var hasCall = false;
+      var call = function () {
+        hasCall = true;
+      };
+      var fn = compile('argument call\ndefer call()\nreturn 123');
+      fn(call, function (err, ret) {
+        should.equal(err, null);
+        ret.should.equal(123);
+        hasCall.should.equal(true);
+        done();
+      });
+    });
+    it('单行函数调用（带参数）', function (done) {
+      var hasCall = false;
+      var call = function (isOk) {
+        hasCall = isOk;
+      };
+      var fn = compile('argument call\ndefer call(true)\nreturn 123');
+      fn(call, function (err, ret) {
+        should.equal(err, null);
+        ret.should.equal(123);
+        hasCall.should.equal(true);
+        done();
+      });
+    });
+    it('多行语句', function (done) {
+      done();
     });
   });
 
