@@ -18,7 +18,7 @@ describe('compile', function () {
     return compiler.compile(source);
   };
   
-  describe('argument / return', function () {
+  describe('argument & return', function () {
     it('单个参数及返回值', function (done) {
       var fn = compile('argument v\nreturn v');
       fn(1234, function (err, ret) {
@@ -68,7 +68,7 @@ describe('compile', function () {
     });
   });
 
-  describe('var / strict mode', function () {
+  describe('var & strict mode', function () {
     it('未声明变量，抛出异常', function (done) {
       var fn = compile('return a');
       fn(function (err) {
@@ -215,6 +215,107 @@ describe('compile', function () {
     });
     it('多行语句', function (done) {
       done();
+    });
+  });
+  
+  describe('if ... elseif ... else', function () {
+    it('if', function (done) {
+      var fn = compile('if 2 > 1 {\nreturn true\n}\nreturn false');
+      fn(function (err, ret) {
+        should.equal(err, null);
+        ret.should.equal(true);
+
+        var fn = compile('if 1 > 2 {\nreturn true\n}\nreturn false');
+        fn(function (err, ret) {
+          should.equal(err, null);
+          ret.should.equal(false);
+          done();
+        })
+      });
+    });
+    it('if ... else', function (done) {
+      var fn = compile('if 1 + 1 = 2 {\nreturn true\n} else {\nreturn false\n}\nreturn 1234');
+      fn(function (err, ret) {
+        should.equal(err, null);
+        ret.should.equal(true);
+        ret.should.not.equal(1234);
+
+        var fn = compile('if 2 + 2 = 1 {\nreturn true\n} else {\nreturn false\n}\nreturn 1234');
+        fn(function (err, ret) {
+          should.equal(err, null);
+          ret.should.equal(false);
+          ret.should.not.equal(1234);
+          done();
+        });
+      });
+    });
+    it('if ... elseif ... else', function (done) {
+      var fn = compile('if false {\nreturn 1\n} elseif true {\nreturn 2\n}\nreturn 3');
+      fn(function (err, ret) {
+        should.equal(err, null);
+        ret.should.equal(2);
+
+        var fn = compile('if false {\nreturn 1\n} elseif false {\nreturn 2\n}\nreturn 3');
+        fn(function (err, ret) {
+          should.equal(err, null);
+          ret.should.equal(3);
+          
+          var fn = compile('if false {\nreturn 1\n} elseif false {\nreturn 2\n} else {\nreturn 3\n}\nreturn 4');
+          fn(function (err, ret) {
+            should.equal(err, null);
+            ret.should.equal(3);
+            done();
+          });
+        });
+      });
+    });
+  });
+  
+  describe('for', function () {
+    it('普通条件循环', function (done) {
+      var fn = compile('let a = ""\nlet i = 0\nfor i < 10 {\nlet a = a + "A"\nlet i = i + 1\n}\nreturn a i');
+      fn(function (err, a, i) {
+        should.equal(err, null);
+        a.should.equal('AAAAAAAAAA');
+        i.should.equal(10);
+        done();
+      });
+    });
+    it('无条件循环 & break', function (done) {
+      var fn = compile('let a = ""\nlet i = 0\nfor i < 10 {\nif i >= 5 {\nbreak\n}\nlet a = a + "A"\nlet i = i + 1\n}\nreturn a i');
+      fn(function (err, a, i) {
+        should.equal(err, null);
+        a.should.equal('AAAAA');
+        i.should.equal(5);
+        done();
+      });
+    });
+    it('无条件循环 & continue', function (done) {
+      var fn = compile('let a = ""\nlet i = 0\nfor i < 10 {\nlet i = i + 1\nif i > 5 {\ncontinue\n}\nlet a = a + "A"\n}\nreturn a i');
+      fn(function (err, a, i) {
+        should.equal(err, null);
+        a.should.equal('AAAAA');
+        i.should.equal(10);
+        done();
+      });
+    });
+    it('遍历对象', function (done) {
+      var data = {a: Math.random(), b: Math.random(), c: Date.now()};
+      var fn = compile('argument data\nlet ret = {}\nfor i in data {\nret[i] = data[i]\n}\nreturn ret');  
+      fn(data, function (err, ret) {
+        should.equal(err, null);
+        ret.should.eql(data);
+        done();
+      });
+    });
+    it('遍历数组', function (done) {
+      var data = [Math.random(), Math.random(), Date.now()];
+      var fn = compile('argument data\nlet ret = {}\nfor i in data {\nret[i] = data[i]\n}\nreturn ret');  
+      fn(data, function (err, ret) {
+        should.equal(err, null);
+        ret.should.eql(data);
+        done();
+      });
     });
   });
 
