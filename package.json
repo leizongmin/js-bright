@@ -1,8 +1,8 @@
 {
-  "name":           "easyscript",
+  "name":           "tea",
   "main":           "./lib/index.js",
   "version":        "0.0.1",
-  "description":    "Async/Await support",
+  "description":    "A tiny script language, add async/await support for javascript",
   "keywords":       ["async", "await"],
   "author":         "Lei Zongmin <leizongmin@gmail.com>",
   "contributors": [
@@ -10,7 +10,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/leizongmin/easyscript.git"
+    "url": "git://github.com/leizongmin/tea.js.git"
   },
   "engines": {
     "node":         ">= 0.8.0"
