@@ -14,31 +14,36 @@ var line = function () {
 
 describe('runtime/core', function () {
   
-  it('runDefers', function (done) {
-    var defers = [];
-    var sum = 0;
-    // 普通
-    defers.push(function (callback) {
-      sum++;
-      callback(null);
-    });
-    // 出错
-    defers.push(function (callback) {  
-      throw new Error();
-    });
-    // 异步
-    defers.push(function (callback) {
-      process.nextTick(function () {
+  describe('ifCondition', function () {
+    it('runDefers', function (done) {
+      var defers = [];
+      var sum = 0;
+      // 普通
+      defers.push(function (error, callback) {
+        error.should.equal('error info');
         sum++;
-        callback();
+        callback(null);
+      });
+      // 出错
+      defers.push(function (error, callback) {  
+        error.should.equal('error info');
+        throw new Error();
+      });
+      // 异步
+      defers.push(function (error, callback) {
+        error.should.equal('error info');
+        process.nextTick(function () {
+          sum++;
+          callback();
+        });
+      });
+      runtime.runDefers(defers, 'error info', function () {
+        sum.should.equal(2);
+        done();
       });
     });
-    runtime.runDefers(defers, function () {
-      sum.should.equal(2);
-      done();
-    });
   });
-  
+
   describe('ifCondition', function () {
     
     it('if ...', function (done) {
