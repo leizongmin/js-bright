@@ -28,7 +28,7 @@ describe('compile', function () {
       });
     });
     it('多个参数及返回值', function (done) {
-      var fn = compile('argument a b c\nreturn c b a');
+      var fn = compile('argument a b c\nreturn c, b, a');
       fn(123, 456, 789, function (err, a, b, c) {
         should.equal(err, null);
         a.should.equal(789);
@@ -48,10 +48,10 @@ describe('compile', function () {
       });
     });
   });
-
+  
   describe('let', function () {
     it('普通赋值 1', function (done) {
-      var fn = compile('let a = 13800138\nreturn a');
+      var fn = compile('var a\nlet a = 13800138\nreturn a');
       fn(function (err, ret) {
         should.equal(err, null);
         ret.should.equal(13800138);
@@ -59,15 +59,23 @@ describe('compile', function () {
       });
     });
     it('普通赋值 2', function (done) {
-      var fn = compile('let a = "haha\nwawa"\nreturn a');
+      var fn = compile('var a\nlet a = "haha\nwawa"\nreturn a');
       fn(function (err, ret) {
         should.equal(err, null);
         ret.should.equal('haha\nwawa');
         done();
       });
     });
+    it('属性赋值 1', function (done) {
+      var fn = compile('var a\nlet a = {}\nlet a.data = "haha\nwawa"\nreturn a');
+      fn(function (err, ret) {
+        should.equal(err, null);
+        ret.data.should.equal('haha\nwawa');
+        done();
+      });
+    });
   });
-
+  
   describe('var & strict mode', function () {
     it('未声明变量，抛出异常', function (done) {
       var fn = compile('return a');
@@ -112,42 +120,27 @@ describe('compile', function () {
         done();
       });
     });
-
     it('等待异步调用（有返回值）', function (done) {
       var async = function (callback) {
         process.nextTick(function () {
           callback(null, 8787);
         });
       };
-      var fn = compile('argument async\nlet a = await async\nreturn a');
+      var fn = compile('argument async\nvar a\nlet a = await async\nreturn a');
       fn(async, function (err, ret) {
         should.equal(err, null);
         ret.should.equal(8787);
         done();
       });
     });
+
     it('等待异步调用（多个返回值）', function (done) {
       var async = function (callback) {
         process.nextTick(function () {
           callback(null, 8, 7, 9);
         });
       };
-      var fn = compile('argument async\nlet a b c = await async\nreturn a b c');
-      fn(async, function (err, a, b, c) {
-        should.equal(err, null);
-        a.should.equal(8);
-        b.should.equal(7);
-        c.should.equal(9);
-        done();
-      });
-    });
-    it('等待异步调用（多个返回值，用逗号分隔）', function (done) {
-      var async = function (callback) {
-        process.nextTick(function () {
-          callback(null, 8, 7, 9);
-        });
-      };
-      var fn = compile('argument async\nlet a,b, c = await async\nreturn a b c');
+      var fn = compile('argument async\nvar a b c\nlet a,b,c = await async\nreturn a,b,c');
       fn(async, function (err, a, b, c) {
         should.equal(err, null);
         a.should.equal(8);
@@ -162,7 +155,7 @@ describe('compile', function () {
           callback(null, c, b, a);
         });
       };
-      var fn = compile('argument async\nlet a,b,c = await async(1,2,3)\nreturn a,b,c');
+      var fn = compile('argument async\nvar a b c\nlet a,b,c = await async(1,2,3)\nreturn a,b,c');
       fn(async, function (err, a, b, c) {
         should.equal(err, null);
         a.should.equal(3);
@@ -172,7 +165,7 @@ describe('compile', function () {
       });
     });
   });
-
+  
   describe('defer', function () {
     it('单行函数调用', function (done) {
       var hasCall = false;
@@ -273,7 +266,7 @@ describe('compile', function () {
   
   describe('for', function () {
     it('普通条件循环', function (done) {
-      var fn = compile('let a = ""\nlet i = 0\nfor i < 10 {\nlet a = a + "A"\nlet i = i + 1\n}\nreturn a i');
+      var fn = compile('var a i\nlet a = ""\nlet i = 0\nfor i < 10 {\nlet a = a + "A"\nlet i = i + 1\n}\nreturn a, i');
       fn(function (err, a, i) {
         should.equal(err, null);
         a.should.equal('AAAAAAAAAA');
@@ -282,7 +275,7 @@ describe('compile', function () {
       });
     });
     it('无条件循环 & break', function (done) {
-      var fn = compile('let a = ""\nlet i = 0\nfor i < 10 {\nif i >= 5 {\nbreak\n}\nlet a = a + "A"\nlet i = i + 1\n}\nreturn a i');
+      var fn = compile('var a i\nlet a = ""\nlet i = 0\nfor i < 10 {\nif i >= 5 {\nbreak\n}\nlet a = a + "A"\nlet i = i + 1\n}\nreturn a, i');
       fn(function (err, a, i) {
         should.equal(err, null);
         a.should.equal('AAAAA');
@@ -291,7 +284,7 @@ describe('compile', function () {
       });
     });
     it('无条件循环 & continue', function (done) {
-      var fn = compile('let a = ""\nlet i = 0\nfor i < 10 {\nlet i = i + 1\nif i > 5 {\ncontinue\n}\nlet a = a + "A"\n}\nreturn a i');
+      var fn = compile('var a i\nlet a = ""\nlet i = 0\nfor i < 10 {\nlet i = i + 1\nif i > 5 {\ncontinue\n}\nlet a = a + "A"\n}\nreturn a, i');
       fn(function (err, a, i) {
         should.equal(err, null);
         a.should.equal('AAAAA');
@@ -301,7 +294,7 @@ describe('compile', function () {
     });
     it('遍历对象', function (done) {
       var data = {a: Math.random(), b: Math.random(), c: Date.now()};
-      var fn = compile('argument data\nlet ret = {}\nfor i in data {\nret[i] = data[i]\n}\nreturn ret');  
+      var fn = compile('var ret\nargument data\nlet ret = {}\nfor i in data {\nret[i] = data[i]\n}\nreturn ret');  
       fn(data, function (err, ret) {
         should.equal(err, null);
         ret.should.eql(data);
@@ -310,7 +303,7 @@ describe('compile', function () {
     });
     it('遍历数组', function (done) {
       var data = [Math.random(), Math.random(), Date.now()];
-      var fn = compile('argument data\nlet ret = {}\nfor i in data {\nret[i] = data[i]\n}\nreturn ret');  
+      var fn = compile('var ret\nargument data\nlet ret = {}\nfor i in data {\nret[i] = data[i]\n}\nreturn ret');  
       fn(data, function (err, ret) {
         should.equal(err, null);
         ret.should.eql(data);
