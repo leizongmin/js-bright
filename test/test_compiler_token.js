@@ -201,6 +201,10 @@ describe('compiler/token', function () {
                        {type: TOKEN.SYMBLE, line: 0, column: 2, text: '<='}]);
       testEql('+\n+', [{type: TOKEN.SYMBLE, line: 0, column: 0, text: '+'},
                        {type: TOKEN.SYMBLE, line: 1, column: 0, text: '+'}]);
+      testEql('====', [{type: TOKEN.SYMBLE, line: 0, column: 0, text: '==='},
+                       {type: TOKEN.SYMBLE, line: 0, column: 3, text: '='}]);
+      testEql('=!==', [{type: TOKEN.SYMBLE, line: 0, column: 0, text: '='},
+                       {type: TOKEN.SYMBLE, line: 0, column: 1, text: '!=='}]);
     });
 
   });
