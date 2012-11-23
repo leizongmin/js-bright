@@ -133,7 +133,14 @@ describe('compile', function () {
         done();
       });
     });
-
+    it('等待一段时间', function (done) {
+      var fn = compile('var ret\nlet ret = await 100\nreturn ret');
+      fn(function (err, ret) {
+        should.equal(err, null);
+        ret.should.equal(100);
+        done();
+      });
+    });
     it('等待异步调用（多个返回值）', function (done) {
       var async = function (callback) {
         process.nextTick(function () {

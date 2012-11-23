@@ -190,4 +190,10 @@ describe('runtime/core', function () {
     });
   });
 
+  it('sleep', function (done) {
+    runtime.sleep(100, function () {
+      done();
+    });
+  });
+
 });
