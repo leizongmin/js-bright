@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>测试页面</title>
+</head>
+<body>
+<h1>倒计时：<span id="number">--</span>秒</h1>
+<h1>北京时间：<span id="time"></span></h1>
+</body>
+</html>
+<script src="tea.js"></script>
+<script>
+(function () {
+  window.setNumber = function (n) {
+    document.getElementById('number').innerText = n;
+  };
+  var fn1 = Tea.compile([
+    'argument n',
+    'for n >= 0 {',
+    '  setNumber(n)',
+    '  await 1000',
+    '  n--',
+    '}'
+    ].join('\n'));
+  fn1(60, function (err) {
+    if (err) alert(err && err.stack);
+  });
+
+  window.setTime = function () {
+    document.getElementById('time').innerText = new Date().toLocaleTimeString();
+  };
+  var fn2 = Tea.compile([
+    'for {',
+    '  setTime()',
+    '  await 500',
+    '}'
+    ].join('\n'));
+  fn2(function (err) {
+    if (err) alert(err && err.stack);
+  });
+})();
+</script>
