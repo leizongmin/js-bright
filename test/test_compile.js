@@ -358,4 +358,29 @@ describe('compile', function () {
     });
   });
 
+  describe('throw', function () {
+    it('空出错信息', function (done) {
+      var fn = compile('throw');
+      fn(function (err) {
+        err.should.instanceof(Error);
+        done();
+      });
+    });
+    it('自定义出错信息 #1', function (done) {
+      var fn = compile('throw 123');
+      fn(function (err) {
+        err.should.equal(123);
+        done();
+      });
+    });
+    it('自定义出错信息 #2', function (done) {
+      var fn = compile('throw new Error("error message")');
+      fn(function (err) {
+        err.should.instanceof(Error);
+        /error message/g.test(err.toString()).should.equal(true);
+        done();
+      });
+    });
+  });
+
 });
