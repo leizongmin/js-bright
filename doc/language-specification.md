@@ -4,7 +4,6 @@
 ## 关键字
 
 __argument__
-__require__
 __var__
 __let__
 __if__
@@ -30,9 +29,7 @@ __NaN__
 
 ```
 /* 程序开头部分 */
-argument x, y, z                  // 定义参数（多个参数可使用空格来分隔）
-let express = require "express"   // 载入模块
-let express = require x           // 使用变量名载入模块，变量x必须是一个字符串值
+argument x, y, z                  // 定义参数（多个参数可使用空格来分隔），也可通过遍历$arguments变量来获取所有参数
 var a, b, c                       // 定义变量（多个变量可使用空格来分隔）
 
 /* 程序主体部分 */
@@ -45,15 +42,11 @@ defer {
 }
 
 // 赋值
-let a = require "express"         // 载入模块，保存到变量a中
 let b = await x                   // 调用异步函数，返回结果保存到变量b中
 let a, b, c = await x             // 多个返回值的异步函数（使用逗号分隔）
 let a = Math.random()             // 调用普通的函数，获取返回值
 let a = 12345 * 515               // 计算表达式，获取返回值
 
-// 载入模块
-require "xxx"                     // 载入模块xxx
-require xxx                       // 载入模块，模块名称从变量xxx中获取
 
 // 调用异步函数
 await xxx                         // 调用函数xxx，无参数
