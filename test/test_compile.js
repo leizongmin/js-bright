@@ -383,4 +383,15 @@ describe('compile', function () {
     });
   });
 
+  describe('function', function () {
+    it('定义函数', function (done) {
+      var fn = compile('argument x\nvar fn,ret,err\nlet fn = function (y) {\nreturn y * y\n}\nlet err,ret = await fn(x)\nreturn ret');
+      fn(10, function (err, ret) {
+        should.equal(err, null);
+        ret.should.equal(100);
+        done();
+      });
+    });
+  });
+
 });

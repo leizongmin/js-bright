@@ -6,6 +6,8 @@
 __argument__
 __var__
 __let__
+__throw__
+__function__
 __if__
 __else__
 __elseif__
@@ -86,6 +88,11 @@ for i in x {
 // 插入javascript代码
 i++
 console.log(i)
+
+// 定义函数
+let fn = function (arg1, arg2) {
+  return arg1 + arg2
+}
 
 // 返回值，可以有多个返回值（使用逗号分隔）
 return
