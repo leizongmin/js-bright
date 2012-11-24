@@ -18,7 +18,8 @@
   "dependencies":	{},
   "devDependencies": {
     "should":       "*",
-    "mocha":        ">= 1.2"
+    "mocha":        ">= 1.2",
+    "browserify":   ">= 1.16.4"
   },
   "scripts": {
     "test":         "mocha -t 5000"
