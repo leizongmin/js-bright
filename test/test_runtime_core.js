@@ -196,4 +196,11 @@ describe('runtime/core', function () {
     });
   });
 
+  it('parseArguments', function () {
+    runtime.parseArguments([1,2,3,4]).should.eql({
+      arguments: [1,2,3],
+      callback:  4
+    });
+  });
+
 });

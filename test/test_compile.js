@@ -347,4 +347,15 @@ describe('compile', function () {
     });
   });
 
+  describe('动态参数，遍历$argument变量', function () {
+    it('一般', function (done) {
+      var fn = compile('var ret\nret = []\nfor i in $arguments {\nret.push($arguments[i])\n}\nreturn ret');
+      fn(123, 456, 789, function (err, ret) {
+        should.equal(err, null);
+        ret.should.eql([123, 456, 789]);
+        done();
+      });
+    });
+  });
+
 });
