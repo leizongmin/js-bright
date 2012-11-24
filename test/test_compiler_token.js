@@ -97,22 +97,29 @@ describe('compiler/token', function () {
 
     it('单行综合测试', function () {
       testEql('if a + b = 10', [{type: TOKEN.NAME, line: 0, column: 0, text: 'if'},
+                                {type: TOKEN.BLANK, line: 0, column: 2, text: ' '},
                                 {type: TOKEN.NAME, line: 0, column: 3, text: 'a'},
+                                {type: TOKEN.BLANK, line: 0, column: 4, text: ' '},
                                 {type: TOKEN.SYMBLE, line: 0, column: 5, text: '+'},
+                                {type: TOKEN.BLANK, line: 0, column: 6, text: ' '},
                                 {type: TOKEN.NAME, line: 0, column: 7, text: 'b'},
+                                {type: TOKEN.BLANK, line: 0, column: 8, text: ' '},
                                 {type: TOKEN.SYMBLE, line: 0, column: 9, text: '='},
+                                {type: TOKEN.BLANK, line: 0, column: 10, text: ' '},
                                 {type: TOKEN.NUMBER, line: 0, column: 11, text: '10'},]);
       testEql('if a+b=10', [{type: TOKEN.NAME, line: 0, column: 0, text: 'if'},
+                            {type: TOKEN.BLANK, line: 0, column: 2, text: ' '},
                             {type: TOKEN.NAME, line: 0, column: 3, text: 'a'},
                             {type: TOKEN.SYMBLE, line: 0, column: 4, text: '+'},
                             {type: TOKEN.NAME, line: 0, column: 5, text: 'b'},
                             {type: TOKEN.SYMBLE, line: 0, column: 6, text: '='},
                             {type: TOKEN.NUMBER, line: 0, column: 7, text: '10'},]);
-      testEql('"abc" + 50 = "abc50"', [{type: TOKEN.STRING, line: 0, column: 0, text: '"abc"'},
-                                       {type: TOKEN.SYMBLE, line: 0, column: 6, text: '+'},
+      testEql('"abc"  +50="abc50"', [{type: TOKEN.STRING, line: 0, column: 0, text: '"abc"'},
+                                       {type: TOKEN.BLANK, line: 0, column: 5, text: ' '},
+                                       {type: TOKEN.SYMBLE, line: 0, column: 7, text: '+'},
                                        {type: TOKEN.NUMBER, line: 0, column: 8, text: '50'},
-                                       {type: TOKEN.SYMBLE, line: 0, column: 11, text: '='},
-                                       {type: TOKEN.STRING, line: 0, column: 13, text: '"abc50"'}]);
+                                       {type: TOKEN.SYMBLE, line: 0, column: 10, text: '='},
+                                       {type: TOKEN.STRING, line: 0, column: 11, text: '"abc50"'}]);
       testEql('"abc"+50="abc50"', [{type: TOKEN.STRING, line: 0, column: 0, text: '"abc"'},
                                     {type: TOKEN.SYMBLE, line: 0, column: 5, text: '+'},
                                     {type: TOKEN.NUMBER, line: 0, column: 6, text: '50'},
@@ -125,6 +132,7 @@ describe('compiler/token', function () {
 
     it('多行综合测试', function () {
       testEql('if (a+10="123") {\n\tok()\n} else {\n\texit\n}', [{type: TOKEN.NAME, line: 0, column: 0, text: 'if'},
+                                                                 {type: TOKEN.BLANK, line: 0, column: 2, text: ' '},
                                                                  {type: TOKEN.SYMBLE, line: 0, column: 3, text: '('},
                                                                  {type: TOKEN.NAME, line: 0, column: 4, text: 'a'},
                                                                  {type: TOKEN.SYMBLE, line: 0, column: 5, text: '+'},
@@ -132,20 +140,25 @@ describe('compiler/token', function () {
                                                                  {type: TOKEN.SYMBLE, line: 0, column: 8, text: '='},
                                                                  {type: TOKEN.STRING, line: 0, column: 9, text: '"123"'},
                                                                  {type: TOKEN.SYMBLE, line: 0, column: 14, text: ')'},
+                                                                 {type: TOKEN.BLANK, line: 0, column: 15, text: ' '},
                                                                  {type: TOKEN.SYMBLE, line: 0, column: 16, text: '{'},
                                                                  {type: TOKEN.NAME, line: 1, column: 1, text: 'ok'},
                                                                  {type: TOKEN.SYMBLE, line: 1, column: 3, text: '('},
                                                                  {type: TOKEN.SYMBLE, line: 1, column: 4, text: ')'},
                                                                  {type: TOKEN.SYMBLE, line: 2, column: 0, text: '}'},
+                                                                 {type: TOKEN.BLANK, line: 2, column: 1, text: ' '},
                                                                  {type: TOKEN.NAME, line: 2, column: 2, text: 'else'},
+                                                                 {type: TOKEN.BLANK, line: 2, column: 6, text: ' '},
                                                                  {type: TOKEN.SYMBLE, line: 2, column: 7, text: '{'},
                                                                  {type: TOKEN.NAME, line: 3, column: 1, text: 'exit'},
                                                                  {type: TOKEN.SYMBLE, line: 4, column: 0, text: '}'},]);
       testEql('call(/* abc */ ok) // not ok\n/*\nhaha\n*/www', [{type: TOKEN.NAME, line: 0, column: 0, text: 'call'},
                                                                 {type: TOKEN.SYMBLE, line: 0, column: 4, text: '('},
                                                                 {type: TOKEN.COMMENT, line: 0, column: 5, text: '/* abc */'},
+                                                                {type: TOKEN.BLANK, line: 0, column: 14, text: ' '},
                                                                 {type: TOKEN.NAME, line: 0, column: 15, text: 'ok'},
                                                                 {type: TOKEN.SYMBLE, line: 0, column: 17, text: ')'},
+                                                                {type: TOKEN.BLANK, line: 0, column: 18, text: ' '},
                                                                 {type: TOKEN.COMMENT, line: 0, column: 19, text: '// not ok'},
                                                                 {type: TOKEN.COMMENT, line: 1, column: 0, text: '/*\nhaha\n*/'},
                                                                 {type: TOKEN.NAME, line: 3, column: 2, text: 'www'},]);
