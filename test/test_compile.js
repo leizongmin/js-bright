@@ -126,7 +126,7 @@ describe('compile', function () {
           callback(null, 8787);
         });
       };
-      var fn = compile('argument async\nvar a\nlet a = await async\nreturn a');
+      var fn = compile('argument async\nvar a, err\nlet err, a = await async\nreturn a');
       fn(async, function (err, ret) {
         should.equal(err, null);
         ret.should.equal(8787);
@@ -134,7 +134,7 @@ describe('compile', function () {
       });
     });
     it('等待一段时间', function (done) {
-      var fn = compile('var ret\nlet ret = await 100\nreturn ret');
+      var fn = compile('var ret, err\nlet err, ret = await 100\nreturn ret');
       fn(function (err, ret) {
         should.equal(err, null);
         ret.should.equal(100);
@@ -147,7 +147,7 @@ describe('compile', function () {
           callback(null, 8, 7, 9);
         });
       };
-      var fn = compile('argument async\nvar a b c\nlet a,b,c = await async\nreturn a,b,c');
+      var fn = compile('argument async\nvar a, b, c, err\nlet err,a,b,c = await async\nreturn a,b,c');
       fn(async, function (err, a, b, c) {
         should.equal(err, null);
         a.should.equal(8);
@@ -162,7 +162,7 @@ describe('compile', function () {
           callback(null, c, b, a);
         });
       };
-      var fn = compile('argument async\nvar a b c\nlet a,b,c = await async(1,2,3)\nreturn a,b,c');
+      var fn = compile('argument async\nvar a b c err\nlet err,a,b,c = await async(1,2,3)\nreturn a,b,c');
       fn(async, function (err, a, b, c) {
         should.equal(err, null);
         a.should.equal(3);

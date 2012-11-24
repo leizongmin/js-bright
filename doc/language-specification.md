@@ -105,6 +105,17 @@ function (arg1, arg2, callback) {
 }
 ```
 
+判断是否出错，并返回出错信息
+
+```
+let err, data = fs.readFile(filename, 'utf8')
+if err {
+  throw err     // 结束程序，返回该出错信息
+} else {
+  return data
+}
+```
+
 当调用异步函数出错时，整个程序将停止执行，这是可以通过注册的defer函数来处理：
 
 ```
