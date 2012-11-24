@@ -319,4 +319,32 @@ describe('compile', function () {
     });
   });
 
+  describe('内嵌JavaScript代码', function () {
+    it('定义对象', function (done) {
+      var fn = compile('var a\na = {\na:123,\nb:456,\nc:"cc\nd"\n};\nreturn a');
+      fn(function (err, ret) {
+        should.equal(err, null);
+        ret.should.eql({
+          a:  123,
+          b:  456,
+          c:  'cc\nd'
+        });
+        done();
+      });
+    });
+    it('其他表达式', function (done) {
+      var fn = compile('argument x\nvar a\na = x > 10 ? 123 : 456;\nreturn a');
+      fn(101, function (err, ret) {
+        should.equal(err, null);
+        ret.should.equal(123);
+
+        fn(5, function (err, ret) {
+          should.equal(err, null);
+          ret.should.equal(456);
+          done();
+        });
+      });
+    });
+  });
+
 });
