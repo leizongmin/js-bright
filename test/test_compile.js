@@ -239,7 +239,7 @@ describe('compile', function () {
         should.equal(err, null);
         ret.should.equal(true);
         ret.should.not.equal(1234);
-
+        
         var fn = compile('if 2 + 2 = 1 {\nreturn true\n} else {\nreturn false\n}\nreturn 1234');
         fn(function (err, ret) {
           should.equal(err, null);
