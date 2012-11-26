@@ -3,11 +3,15 @@
   "main":           "./index.js",
   "version":        "0.0.1",
   "description":    "A tiny script language, add async/await support for javascript",
-  "keywords":       ["async", "await"],
+  "keywords":       ["async", "await", "compiler", "javascript", "language"],
   "author":         "Lei Zongmin <leizongmin@gmail.com>",
   "contributors": [
     {"name": "Lei Zongmin", "email": "leizongmin@gmail.com"}
   ],
+  "licenses":     [{
+    "type":       "MIT",
+    "url":        "https://raw.github.com/leizongmin/tea.js/master/MIT-License"
+  }],
   "repository": {
     "type": "git",
     "url": "git://github.com/leizongmin/tea.js.git"

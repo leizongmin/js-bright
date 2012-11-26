@@ -1,43 +1,3 @@
-Tea.js
-==========
-
-简单的脚本语言，编译成JavaScript来运行
-
-安装
-
-```bash
-npm install tea
-```
-
-新建文件：test.tea
-
-```
-argument n
-var i
-let i = 0
-for i < n {
-  await 1000
-  console.log(i)
-  i++
-}
-return i
-```
-
-运行
-
-```bash
-node
-require('tea')
-test = require('./test')
-test(1000, console.log)
-```
-
-
-
-授权协议
-================
-
-```
 Copyright (c) 2012 Lei Zongmin(雷宗民) <leizongmin@gmail.com>
 http://ucdok.com
 
@@ -61,4 +21,3 @@ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
 LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-```
