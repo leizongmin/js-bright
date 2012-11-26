@@ -1,15 +1,16 @@
-Tea.js
+Bright
 ==========
 
 简单的脚本语言，编译成JavaScript来运行
 
+
 安装
 
 ```bash
-npm install teajs
+npm install bright
 ```
 
-新建文件：test.tea
+新建文件：test.bright
 
 ```
 argument n
@@ -23,15 +24,16 @@ for i < n {
 return i
 ```
 
-运行
+在Node.js运行
 
 ```bash
 node
-require('tea')
+require('bright')
 test = require('./test')
 test(1000, console.log)
 ```
 
+在浏览器中运行 参考文件 build/test.html
 
 
 授权协议

@@ -1,0 +1,11 @@
+let exports.test = function (n) {
+  var i
+  let i = 0
+  for i < n {
+    console.log(n)
+    await 500
+    i++
+  }
+  return n
+}
+console.log('loaded')
