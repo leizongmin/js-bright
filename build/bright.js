@@ -736,6 +736,7 @@ exports.KEYWORD = [
   'continue',
   'return',
   'await',
+  'sleep',
   'defer',
   'true',
   'false',
@@ -1892,6 +1893,13 @@ syntax.parse = function (tokenList, isNested) {
           addLineNumber(firstT, 'END');
           break;
 
+        case 'sleep':
+          needNextToken();
+          addLineNumber(firstT, 'START');
+          syntax.parseSleep(context, nextTs);
+          addLineNumber(firstT, 'END');
+          break;
+
         case 'function':
           needNextToken();
           addLineNumber(firstT, 'START');
@@ -2089,7 +2097,7 @@ syntax.parseLet = function (context, tokenList) {
     if (names.length > 1) {
       return syntax.throwWordError(tokenList[0], 'Not support tuple assignment');
     }
-    syntax.parseExpression(context, names[0], tokenList.slice(0));
+    syntax.parseExpression(context, names[0], tokenList);
   }
 };
 
@@ -2140,8 +2148,7 @@ syntax.parseExpression = function (context, name, tokenList) {
 syntax.parseAwait = function (context, names, tokenList) {
   var firstT = tokenList[0];
   if (tokenList.length === 1 && firstT.type === TOKEN.NUMBER) {
-    // 等待N毫秒
-    var call = '$$_runtime.sleep(' + firstT.text + ', ';
+    return syntax.throwWordError(firstT);
   } else {
     // 调用函数
     if (tokenList[0].type !== TOKEN.IDENTIFIER) {
@@ -2482,43 +2489,30 @@ syntax.parseFunction = function (context, name, tokenList) {
 };
 
 /**
- * 取函数体
+ * 解析sleep语句
+ * 格式为： sleep 1000  或者 sleep x*y
+ * 输入的单词中，已经去掉了sleep
  *
+ * @param {Object} context
  * @param {Array} tokenList
- * @return {Object}
- *   - {Array} body
- *   - {Array} next
  */
-/*
-syntax.getFunctionBody = function (tokenList) {
-  var ret;
-  var body = [];
-  var brace = 0;
-  while (ret = syntax.readLine(tokenList)) {
-    tokenList = ret.next;
-    var line = syntax.noBlankToken(ret.line);
-    var firstT = line[0];
-    var lastT = line[line.length - 1];
-    if (firstT.type === TOKEN.SYMBLE && firstT.text === '}') {
-      brace--;
-    } else if (lastT.type === TOKEN.SYMBLE && lastT.text === '{') {
-      brace++;
-    }
-    if (brace < 0) {
-      // 如果末尾为这种情况：  } else {
-      // 把 else { 接到剩余的单词前面
-      if (line.length > 1) {
-        tokenList = line.slice(1).concat(tokenList);
-      }
-      break;
-    } else {
-      body = body.concat(line);  
-    }
-  }
-  
-  return {body: body, next: tokenList};
+syntax.parseSleep = function (context, tokenList) {
+  var lastT = tokenList[tokenList.length - 1];
+  tokenList.push({
+    type:   TOKEN.SYMBLE,
+    text:   ';',
+    line:   lastT.line,
+    column: lastT.column + lastT.text.length + 1
+  });
+  syntax.parseExpression(context, 'var $$_sleep_ms', tokenList);
+  var code = '$$_runtime.sleep($$_sleep_ms, function ($$_err) {';
+  syntax.codePushLine(context, code);
+  context.indent++;
+  syntax.parse(context, true);
+  context.indent--;
+  syntax.codePushLine(context, '});');
 };
-*/
+
 });
 
 require.define("/index.js",function(require,module,exports,__dirname,__filename,process,global){/**
