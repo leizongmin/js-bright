@@ -389,7 +389,43 @@ describe('compile', function () {
       fn(10, function (err, ret) {
         should.equal(err, null);
         ret.should.equal(100);
-        done();
+        fn(2, function (err, ret) {
+          should.equal(err, null);
+          ret.should.equal(4);
+          done();
+        });
+      });
+    });
+    it('嵌套定义函数', function (done) {
+      var code = [
+        'argument x',
+        'var fn, ret, err',
+        'let fn = function (y) {',
+        '  var err, ret, fn2',
+        '  let fn2 = function (y2) {',
+        '    return y2 * y2',
+        '  }',
+        '  let err, ret = await fn2(y)',
+        '  if err {',
+        '    throw err',
+        '  }',
+        '  return y * ret',
+        '}',
+        'let err, ret = await fn(x)',
+        'if err {',
+        '  throw err',
+        '}',
+        'return ret'
+      ].join('\n');
+      var fn = compile(code);
+      fn(2, function (err, ret) {
+        should.equal(err, null);
+        ret.should.equal(8);
+        fn(10, function (err, ret) {
+          should.equal(err, null);
+          ret.should.equal(1000);
+          done();
+        });
       });
     });
   });
