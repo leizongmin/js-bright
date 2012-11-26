@@ -1,0 +1,124 @@
+<!doctype html>
+<html>
+<head>
+<title></title>
+<meta charset="utf-8">
+<link rel="stylesheet" type="text/css" href="../stylesheets/stylesheet.css" media="screen" />
+<style>
+body {
+  padding: 0;
+  margin: 0;
+}
+#box {
+  margin-top: 50px;
+  width: 700px;
+  border: 1px solid #AAA;
+  margin: auto;
+  height: 300px;
+}
+#code {
+  width: 520px;
+  margin: auto;
+}
+.clear {
+  clear: both;
+}
+.line {
+  width: 5px;
+  height: 140px;
+  background-color: green;
+  border: 1px solid #AAA;
+  box-shadow: 1px 1px 2px #CCC;
+  float: left;
+  margin-top: 50px;
+}
+.active {
+  background-color: yellow;
+}
+</style>
+</head>
+<body>
+  <div id="box"></div>
+  <div id="code">
+    <pre><code>
+/* 排序 */
+var i, j
+i = 0
+for i < data.length - 1 {
+  j = i + 1
+  for j < data.length {  
+    swap(i, j)    // 对比相邻的两个数并排序
+    sleep 10      // 暂停10毫秒
+    j++
+  }
+  i++
+}
+alert('OK')
+    </code></pre>
+  </div>
+</body>
+</html>
+<script src="http://code.jquery.com/jquery-1.8.3.min.js"></script>
+<script src="https://raw.github.com/leizongmin/js-bright/master/build/bright.min.js"></script>
+<script>
+/* 此代码用于绘制图像 */
+var COUNT = 100;
+var UNIT_HEIGHT = 4;
+var randomArray = function (length) {
+  var array = [];
+  for (var i = 1; i < length; i++) {
+    array.push(i);
+  }
+  array.sort(function () {
+    return (Math.round(Math.random()) - 0.5);
+  });
+  return array;
+};
+var data = randomArray(COUNT);
+var $box = $('#box');
+var setHeight = function (i) {
+  var d = data[i];
+  $('#line-' + i).css({
+    'margin-top': ((COUNT - d) * UNIT_HEIGHT) + 'px',
+    'height':     (d * UNIT_HEIGHT) + 'px'
+  });
+};
+var html = '';
+data.forEach(function (d, i) {
+  html += '<div class="line" id="line-' + i + '"></div>';
+});
+html += '<div class="clear"></div>';
+$box.html(html).height(COUNT * UNIT_HEIGHT + 20);
+data.forEach(function (d, i) {
+  setHeight(i);
+});
+
+var $line = $('.line');
+var swap = function (a, b) {
+  $line.removeClass('active');
+  $('#line-' + b).addClass('active');
+  if (data[a] > data[b]) {
+    var d = data[a];
+    data[a] = data[b];
+    data[b] = d;
+    setHeight(a);
+    setHeight(b);
+  }
+  console.log(data.join(', '));
+}
+</script>
+<script type="text/bright">
+/* 排序 */
+var i, j
+i = 0
+for i < data.length - 1 {
+  j = i + 1
+  for j < data.length {  
+    swap(i, j)    // 对比相邻的两个数并排序
+    sleep 10      // 暂停10毫秒
+    j++
+  }
+  i++
+}
+alert('OK')
+</script>
