@@ -392,7 +392,7 @@ process.binding = function (name) {
 });
 
 require.define("/lib/index.js",function(require,module,exports,__dirname,__filename,process,global){/**
- * Tea.js
+ * bright
  *
  * @author 老雷<leizongmin@gmail.com>
  */
@@ -404,8 +404,19 @@ var define = exports.define = require('./compiler/define');
 var parser = exports.parser = require('./compiler/parser');
 
 
-// 是否显示编译出来的js代码
-if (/tea/img.test(process.env.DEBUG)) {
+// 检查当前运行环境
+if (typeof(window) === 'undefined') {
+  var isBrowser = false;
+} else {
+  var isBrowser = true;
+}
+var isNode = !isBrowser;
+
+
+// 是否显示编译出来的js代码，开启输出调试代码的方法：
+// Node.js:   设置环境变量 DEBUG=bright
+// 浏览器：   window._BRIGHT_DEBUG= true
+if ((isNode && /bright/img.test(process.env.DEBUG)) || (isBrowser && typeof(_BRIGHT_DEBUG) !== 'undefined')) {
   var debug = console.log;
 } else {
   var debug = function () { };
@@ -427,18 +438,95 @@ exports.compile = function (source) {
 
 
 
-if (typeof(window) === 'undefined') {
-  // 在Node.js环境下注册.tea后缀
-  require.extensions['.tea'] = function (module, filename) {
-    module.exports = exports.compile(fs.readFileSync(filename, 'utf8'));
+if (isNode) {
+  // 在Node.js环境下
+  // 注册.bright后缀
+  require.extensions['.bright'] = function (module, filename) {
+    module.exports = exports.load(filename);
   };
+
+  /**
+   * 编译模块文件
+   *
+   * @param {String} filename
+   * @return {Object}
+   */
+  exports.load = function (filename) {
+    var source = fs.readFileSync(filename, 'utf8');
+    var js = parser.parse(source);
+    js = 'var $$_runtime = require("bright").runtime;\n' +
+         js + '(function (err) {\n' +
+         '  if (err) console.error(err && err.stack);\n' +
+         '});';
+    var target = filename + '.compile.js';
+    fs.writeFileSync(target, js);
+    return require(target);
+  };
+
 } else {
-  // 在Browser环境下，注册Tea命名空间
-  if (typeof(window.Tea) === 'undefined') {
-    window.Tea = module.exports;
+  // 在Browser环境下
+  // 注册Bright命名空间
+  if (typeof(window.Bright) === 'undefined') {
+    window.Bright = module.exports;
   } else {
-    console.log('Cannot register namespace "Tea".');
+    console.error('Cannot register namespace "Bright".');
   }
+
+  var run = function (source) {
+    var fn = exports.compile(source);
+    fn(function (err) {
+      if (err) console.error(err && err.stack);
+    });
+  };
+
+  /**
+   * 编译模块文件
+   *
+   * @param {String} url
+   * @param {Function} callback
+   */
+  exports.load = function (url, callback) {
+    var xhr = window.ActiveXObject ? new window.ActiveXObject('Microsoft.XMLHTTP') : new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    if ('overrideMimeType' in xhr) {
+      xhr.overrideMimeType('text/plain');
+    }
+    xhr.onreadystatechange = function () {
+      var _ref;
+      if (xhr.readyState === 4) {
+        if ((_ref = xhr.status) === 0 || _ref === 200) {
+          run(xhr.responseText);
+        } else {
+          throw new Error("Could not load " + url);
+        }
+        if (callback) {
+          return callback();
+        }
+      }
+    };
+    return xhr.send(null);
+  };
+
+  // 自动执行使用<script>标签引用的程序
+  var runScripts = function () {
+    var scripts = document.getElementsByTagName('script');
+    for (var i = 0, len = scripts.length; i < len; i++) {
+      var s = scripts[i];
+      if (s && s.type && s.type === 'text/bright') {
+        if (s.src) {
+          exports.load(s.src);
+        } else {
+          run(s.innerHTML);
+        }
+      }
+    }
+  };
+  if (window.addEventListener) {
+    addEventListener('DOMContentLoaded', runScripts, false);
+  } else {
+    attachEvent('onload', runScripts);
+  }
+
 }
 
 });
@@ -448,7 +536,7 @@ require.define("fs",function(require,module,exports,__dirname,__filename,process
 });
 
 require.define("/lib/runtime/core.js",function(require,module,exports,__dirname,__filename,process,global){/**
- * Tea.js 运行时库/核心
+ * bright 运行时库/核心
  *
  * @author 老雷<leizongmin@gmail.com>
  */
@@ -593,10 +681,27 @@ runtime.sleep = function (intval, callback) {
   }, intval);
 };
 
+/**
+ * 解析函数参数
+ *
+ * @param {Array} args
+ * @return {Object}
+ *   - {Array} arguments
+ *   - {Function} callback
+ */
+runtime.parseArguments = function (args) {
+  var ret = {arguments: []};
+  ret.callback = args[args.length - 1];
+  for (var i = 0, len = args.length - 1; i < len; i++) {
+    ret.arguments.push(args[i]);
+  }
+  return ret;
+};
+
 });
 
 require.define("/lib/compiler/define.js",function(require,module,exports,__dirname,__filename,process,global){/**
- * Tea.js 编译器/常量定义
+ * bright 编译器/常量定义
  *
  * @author 老雷<leizongmin@gmail.com>
  */
@@ -618,9 +723,10 @@ exports.TOKEN = {
 // 关键字列表
 exports.KEYWORD = [
   'argument',
-  'require',
   'var',
   'let',
+  'throw',
+  'function',
   'if',
   'else',
   'elseif',
@@ -641,7 +747,7 @@ exports.KEYWORD = [
 });
 
 require.define("/lib/compiler/parser.js",function(require,module,exports,__dirname,__filename,process,global){/**
- * Tea.js 编译器/编译代码
+ * bright 编译器/编译代码
  *
  * @author 老雷<leizongmin@gmail.com>
  */
@@ -761,14 +867,14 @@ var code = 'argument x, y, z\n' +
            '  await yy\n' +
            '  let b = await zz\n' +
            '}\n' +
-           'let a = require b\n' +
-           'require "xxx"\n' +
+           'let a = require(b)\n' +
+           'require("xxx")\n' +
            'let b = await x.y\n' +
            'let b = await y(1,2,3)\n' +
            'var e\n' +
            'let z = false\n' + 
            'let c = (20 + 5) / 4\n' +
-           'require x\n' +
+           'require(x)\n' +
            'await z\n' +
            'let a,b,c = await z(3)\n' +
            'let a b = await x\n' +
@@ -795,16 +901,41 @@ var code = 'argument x, y, z\n' +
            'for i in obj.xx {\n' +
            '  await cc\n' +
            '}\n' +
-           'await bb';
+           'await bb\n' +
+           'let a = function (a, b, c) {\n' +
+           '  if a + b = 1 {\n' +
+           '    await yy\n' +
+           '  }\n' +
+           '  await gg\n' +
+           '  return x\n' +
+           '}\n' +
+           'for {\n' +
+           '  await yyyyy\n' +
+           '}\n' +
+           'return a';
 var js = exports.parse(code);           
 console.log(js);
 console.log(eval(js));
 */
-
+/*
+var code = 'argument x y z\n' +
+           'let a = function (a, b, c) {\n' +
+           '  if a + b = 1 {\n' +
+           '    await yy\n' +
+           '  }\n' +
+           '  await gg\n' +
+           '  return x\n' +
+           '}\n' +
+           'for {\n' +
+           '  await yyyyy\n' +
+           '}\n' +
+           'return a';
+console.log(exports.parse(code));
+*/
 });
 
 require.define("/lib/compiler/token.js",function(require,module,exports,__dirname,__filename,process,global){/**
- * Tea.js 编译器/词法分析
+ * bright 编译器/词法分析
  *
  * @author 老雷<leizongmin@gmail.com>
  */
@@ -932,7 +1063,7 @@ exports._parse = function (source) {
   var linePos = 0;                  // 当前行的位置
   var curWord = {line: 0, column: 0}; // 当前单词开始的位置
   var curStatus = STATUS.BLANK;     // 当前单词的状态（判断单词类型）
-  var words = [];                   // 已分析的单词数组（按顺序）
+  var tokenList = [];                   // 已分析的单词数组（按顺序）
 
   // 临时状态
   var quoteBegin = false;           // 字符串开始，是单引号还是双引号
@@ -974,24 +1105,28 @@ exports._parse = function (source) {
   };
 
   // 添加单词，末尾为当前位置的前面（不包括当前字符），可通过curPos来控制
-  var pushWord = function (t) {
+  var pushToken = function (t) {
     if (lastPos < curPos) {
       var w = source.slice(lastPos, curPos);
       w = w.trim();
-      var word = {
+      var token = {
         type:   t,
         line:   curWord.line,
         column: curWord.column,
         text:   w
       };
       if (t === TOKEN.BLANK) {
-        // 过滤掉空白字符
+        // 过滤掉行首的空白字符 
+        if (token.column > 0) {
+          token.text = ' ';
+          tokenList.push(token);
+        }
       } else {
         // 将字符串中的换行符转换成\n
         if (t === TOKEN.STRING) {
-          word.text = word.text.replace(/\n/gm, '\\n').replace(/\r/gm, '\\r');
+          token.text = token.text.replace(/\n/gm, '\\n').replace(/\r/gm, '\\r');
         }
-        words.push(word);
+        tokenList.push(token);
       }
     }
     lastPos = curPos;
@@ -1046,22 +1181,22 @@ exports._parse = function (source) {
         case STATUS.BLANK:
           if (isNumber(c)) {
             // 数值开始
-            pushWord(TOKEN.BLANK);
+            pushToken(TOKEN.BLANK);
             setStatus(STATUS.NUMBER);
           } else if (isLetter(c)) {
             // 单词开始
-            pushWord(TOKEN.BLANK);
+            pushToken(TOKEN.BLANK);
             setStatus(STATUS.NAME);
           } else if (isQuote(c)) {
             // 字符串开始
-            pushWord(TOKEN.BLANK);
+            pushToken(TOKEN.BLANK);
             quoteBegin = c;
             setStatus(STATUS.STRING);
           } else if (isBlank(c)) {
             // 仍然是空白字符
           } else {
             // 其它符号
-            pushWord(TOKEN.BLANK);
+            pushToken(TOKEN.BLANK);
             setStatus(STATUS.SYMBLE);
           }
           break;
@@ -1083,7 +1218,7 @@ exports._parse = function (source) {
             }
           } else if (isBlank(c)) {
             // 数值结束
-            pushWord(TOKEN.NUMBER);
+            pushToken(TOKEN.NUMBER);
             setStatus(STATUS.BLANK);
           } else {
             // 如果为第一次出现小数点，或者在e后第一次出现正负符号
@@ -1103,7 +1238,7 @@ exports._parse = function (source) {
               }
             } else {
               // 数值结束
-              pushWord(TOKEN.NUMBER);
+              pushToken(TOKEN.NUMBER);
               setStatus(STATUS.SYMBLE);
             }
           }
@@ -1115,7 +1250,7 @@ exports._parse = function (source) {
             // 仍然是单词
           } else if (isBlank(c)) {
             // 单词结束
-            pushWord(TOKEN.NAME);
+            pushToken(TOKEN.NAME);
             setStatus(STATUS.BLANK);
           } else {
             // 如果是下划线，则仍然是单词
@@ -1123,7 +1258,7 @@ exports._parse = function (source) {
               // 仍然是单词
             } else {
               // 单词结束
-              pushWord(TOKEN.NAME);
+              pushToken(TOKEN.NAME);
               setStatus(STATUS.SYMBLE);
             }
           }
@@ -1141,7 +1276,7 @@ exports._parse = function (source) {
             curStatus = STATUS.COMMENT_2;
           } else {
             // 将符号分割成单个字符
-            pushWord(TOKEN.SYMBLE);
+            pushToken(TOKEN.SYMBLE);
             if (isNumber(c)) {
               // 数值开始
               setStatus(STATUS.NUMBER);
@@ -1166,7 +1301,7 @@ exports._parse = function (source) {
           if (c === quoteBegin && prevCharIsBackslash === false) {
             // 字符串结束
             curPos++;
-            pushWord(TOKEN.STRING);
+            pushToken(TOKEN.STRING);
             // 特殊情况，直接判断下一个字符
             checkNextChar();
           } else if (c === CHAR.BACKSLASH) {
@@ -1182,7 +1317,7 @@ exports._parse = function (source) {
           // 只有遇到换行符或到达文件末尾才结束
           if (isNewLine(c) || curPos >= length - 2) {
             curPos++;
-            pushWord(TOKEN.COMMENT);
+            pushToken(TOKEN.COMMENT);
             // 特殊情况，直接判断下一个字符
             checkNextChar();
           }
@@ -1196,7 +1331,7 @@ exports._parse = function (source) {
             if (nc === CHAR.FORWARDSLASH) {
               // 已确定下一个字符为注释的末尾
               curPos += 2;
-              pushWord(TOKEN.COMMENT);
+              pushToken(TOKEN.COMMENT);
               // 特殊情况，直接判断下一个字符
               nextChar();
               checkNextChar();
@@ -1212,7 +1347,7 @@ exports._parse = function (source) {
     if (curStatus !== STATUS.BLANK) {
       throwError('Unexpected end of input');
     } else {
-      return words;
+      return tokenList;
     }
   } catch (err) {
     return err;
@@ -1231,13 +1366,13 @@ exports._parse = function (source) {
  * @return Array
  */
 exports.parse = function (source) {
-  var words = exports._parse(source);
-  if (!Array.isArray(words)) {
-    return words;
+  var tokenList = exports._parse(source);
+  if (!Array.isArray(tokenList)) {
+    return tokenList;
   }
 
   // 对返回的结果进行进一步处理
-  for (var i = 0; i < words.length; i++) {
+  for (var i = 0; i < tokenList.length; i++) {
     (function (w, i) {
       switch (w.type) {
 
@@ -1246,8 +1381,8 @@ exports.parse = function (source) {
             // 排除使用关键字作为标识符的情况：
             // 1、前面有小数点，如：obj.false 或者 false.name （前面或后面有小数点）
             // 2、定义对象内部的键名，如：{false: 123456} （前面肯定是"{"或","，且后面是":"）
-            var prevT = words[i - 1];
-            var nextT = words[i + 1];
+            var prevT = tokenList[i - 1];
+            var nextT = tokenList[i + 1];
             prevT = prevT && prevT.type === TOKEN.SYMBLE ? prevT.text : null;
             nextT = nextT && nextT.type === TOKEN.SYMBLE ? nextT.text : null;
             if (prevT === '.' || nextT === '.') {
@@ -1266,10 +1401,10 @@ exports.parse = function (source) {
           // 如果数字前面有小数点，则将其合并，必须符合以下条件
           // 1、前一个字符必须是紧邻的（没有空白字符）
           // 2、小数点的前一个字符只能是符号或者空白
-          var prevT = words[i - 1];
+          var prevT = tokenList[i - 1];
           if (prevT && prevT.type === TOKEN.SYMBLE && prevT.text === '.') {
             if (prevT.column + 1 === w.column && prevT.line === w.line) {
-              var prevT2 = words[i - 2];
+              var prevT2 = tokenList[i - 2];
               if (!prevT2 || prevT2.type === TOKEN.SYMBLE) {
                 var newW = {
                   type:   TOKEN.NUMBER,
@@ -1277,8 +1412,8 @@ exports.parse = function (source) {
                   line:   prevT.line,
                   column: prevT.column
                 };
-                words[i - 1] = newW;
-                words.splice(i, 1);
+                tokenList[i - 1] = newW;
+                tokenList.splice(i, 1);
                 i--;
               }
             }
@@ -1287,7 +1422,7 @@ exports.parse = function (source) {
 
         case TOKEN.SYMBLE:
           // 合并两个符号的操作符，如：++ -- << >> == >= <= != === !==
-          var nextT = words[i + 1];
+          var nextT = tokenList[i + 1];
           if (nextT && w.line === nextT.line) {
             if ((w.text === '+' && nextT.text === '+') ||
                 (w.text === '-' && nextT.text === '-') ||
@@ -1304,36 +1439,36 @@ exports.parse = function (source) {
                     column: w.column
                   };
                   // 如果是 !=== 或者 ===
-                  var nextT2 = words[i + 2];
+                  var nextT2 = tokenList[i + 2];
                   if ((w.text === '=' || w.text === '!') && nextT.text === '=' && 
                        nextT2 && nextT2.type === TOKEN.SYMBLE && nextT2.text === '=') {
                     newW.text += nextT2.text;
-                    words.splice(i + 1, 2);
+                    tokenList.splice(i + 1, 2);
                   } else {
-                    words.splice(i + 1, 1);
+                    tokenList.splice(i + 1, 1);
                   }
-                  words[i] = newW;
+                  tokenList[i] = newW;
                 }
           }
       }
-    })(words[i], i);
+    })(tokenList[i], i);
   }
   
   // 将 true false null undefined NaN 转化成 IDENTIFIER
   var list = ['true', 'false', 'null', 'undefined', 'NaN'];
-  words.forEach(function (w) {
+  tokenList.forEach(function (w) {
     if (w.type === TOKEN.KEYWORD && list.indexOf(w.text) !== -1) {
       w.type = TOKEN.IDENTIFIER;
     }
   });
   
-  return words;
+  return tokenList;
 };
 
 });
 
 require.define("/lib/compiler/syntax.js",function(require,module,exports,__dirname,__filename,process,global){/**
- * Tea.js 编译器/语法分析
+ * bright 编译器/语法分析
  *
  * @author 老雷<leizongmin@gmail.com>
  */
@@ -1408,9 +1543,8 @@ syntax.codePushLine = function (context, line) {
  * 取缩进空格
  *
  * @param {Object} context
- * @param {String} spaces
  */
-syntax.getIndentSpace = function (context, spaces) {
+syntax.getIndentSpace = function (context) {
   var spaces = '';
   for (var i = 0; i < context.indent; i++) {
     spaces += '  ';
@@ -1607,6 +1741,85 @@ syntax.parseMultiValue = function (tokenList) {
 };
 
 /**
+ * 全都空白单词
+ *
+ * @param {Array} tokenList
+ * @return {Array}
+ */
+syntax.noBlankToken = function (tokenList) {
+  var ret = [];
+  tokenList.forEach(function (t) {
+    if (t.type !== TOKEN.BLANK) {
+      ret.push(t);
+    }
+  });
+  return ret;
+};
+
+/**
+ * 生成外围的js代码
+ *
+ * @param {Object} context
+ * @return {String}
+ */
+syntax.wrap = function (context) {
+  // 生成变量列表声明
+  if (context.vars.length > 0) {
+    var varsCode = '    var ' + context.vars.join(', ') + ';\n';
+  } else {
+    var varsCode = '';
+  }
+
+  // 生成延迟执行代码
+  if (context.defers.length > 0) {
+    var indent = '    ';
+    var defersCode = ['\n' + indent + '/* defer function start */',
+                      indent + 'var $$_defers = [];'];
+    context.defers.forEach(function (fn) {
+      defersCode.push(indent + '$$_defers.push(' + fn + ');');
+    });
+    defersCode.push(indent + 'var $$_oldCallback = $$_callback;');
+    defersCode.push(indent + '$$_callback = $$_callback_global = function () {');
+    defersCode.push(indent + '  var $$_args = arguments;');
+    defersCode.push(indent + '  $$_runtime.runDefers($$_defers, $$_args[0], function (err) {');
+    defersCode.push(indent + '    if (err) $$_runtime.error(err.stack);');
+    defersCode.push(indent + '    $$_oldCallback.apply(null, $$_args);');
+    defersCode.push(indent + '  });');
+    defersCode.push(indent + '};');
+    defersCode.push(indent + '/* defer function end */\n');
+    defersCode = defersCode.join('\n') + '\n';
+  } else {
+    defersCode = '';
+  }
+
+  // 生成最终代码并返回
+  var indent = syntax.getIndentSpace(context).substr(4);
+  var code = '(function (' + context.args.join(', ') + ') {\n' +
+    indent + '  "use strict";\n\n' +
+    indent + '  /* function header start */\n' +
+    indent + '  var $$_callback, $arguments;\n' +
+    indent + '  if (arguments.length < 1 || typeof(arguments[arguments.length - 1]) !== "function") {\n' +
+    indent + '    throw new Error("Need a callback parameter.");\n' +
+    indent + '  } else {\n' +
+    indent + '    $arguments = $$_runtime.parseArguments(arguments);\n' +
+    indent + '    $$_callback = $arguments.callback;\n' +
+    indent + '    $arguments = $arguments.arguments\n' +
+    indent + '  }\n' +
+    indent + '  var $$_callback_global = $$_callback;\n' +
+    indent + '  /* function header end */\n\n' +
+    indent + '  try {\n' +
+    (varsCode ? indent + varsCode : '') +
+    (defersCode ? indent + defersCode : '') +
+             context.code.join('\n') + '\n' +
+    indent + '  } catch (err) {\n' +
+    indent + '    return $$_callback_global(err);\n' +
+    indent + '  }\n' +
+    indent + '})';
+    
+  return code;
+};
+
+/**
  * 开始语法分析
  * 直接返回编译后的js代码
  *
@@ -1633,135 +1846,116 @@ syntax.parse = function (tokenList, isNested) {
     context.tokenList = syntax.addReturnAtEnd(context.tokenList);
   }
 
+  // 添加行号标记
+  var addLineNumber = function (t, msg) {
+    syntax.codePushLine(context, '/* LINE:' + (t.line + 1) + ' ' + msg + ' */');
+  };
+
   for (var ret; ret = syntax.readLine(context.tokenList);) {
     var line = ret.line;
     context.tokenList = ret.next
     var firstT = line[0];
     var nextTs = line.slice(1);
-    if (firstT.type === TOKEN.KEYWORD) {
-      var nextNextToken = function () {
+
+    if (firstT.type === TOKEN.BLANK) {
+      // 不处理空白字符
+    } else if (firstT.type === TOKEN.KEYWORD) {
+      var needNextToken = function () {
         if (nextTs.length < 1) {
           return syntax.throwWordError(firstT, 'Unexpected end of input');
         }
       };
+      nextTs = syntax.noBlankToken(nextTs);
       switch (firstT.text) {
 
         case 'argument':
-          nextNextToken();
+          needNextToken();
           syntax.parseArgument(context, nextTs);
           break;
 
         case 'var':
-          nextNextToken();
+          needNextToken();
           syntax.parseVar(context, nextTs);
           break;
 
         case 'let':
-          nextNextToken();
+          needNextToken();
+          addLineNumber(firstT, 'START');
           syntax.parseLet(context, nextTs);
-          break;
-
-        case 'require':
-          nextNextToken();
-          syntax.parseRequire(context, '', nextTs);
+          addLineNumber(firstT, 'END');
           break;
 
         case 'await':
-          nextNextToken();
+          needNextToken();
+          addLineNumber(firstT, 'START');
           syntax.parseAwait(context, '', nextTs);
+          addLineNumber(firstT, 'END');
+          break;
+
+        case 'function':
+          needNextToken();
+          addLineNumber(firstT, 'START');
+          syntax.parseFunction(context, '', nextTs);
+          addLineNumber(firstT, 'END');
           break;
 
         case 'return':
+          addLineNumber(firstT, 'START');
           syntax.parseReturn(context, nextTs, firstT.isNested);
+          addLineNumber(firstT, 'END');
           break;
 
         case 'defer':
-          nextNextToken();
+          needNextToken();
           syntax.parseDefer(context, nextTs);
           break;
 
         case 'if':
-          nextNextToken();
+          needNextToken();
+          addLineNumber(firstT, 'START');
           syntax.parseIf(context, nextTs);
+          addLineNumber(firstT, 'END');
           break;
 
         case 'for':
-          nextNextToken();
+          needNextToken();
+          addLineNumber(firstT, 'START');
           syntax.parseFor(context, nextTs);
+          addLineNumber(firstT, 'END');
           break;
 
         case 'break':
+          addLineNumber(firstT, 'START');
           syntax.codePushLine(context, 'return $$_break(null);');
+          addLineNumber(firstT, 'END');
           break;
 
         case 'continue':
+          addLineNumber(firstT, 'START');
           syntax.codePushLine(context, 'return $$_continue(null);');
+          addLineNumber(firstT, 'END');
+          break;
+
+        case 'throw':
+          addLineNumber(firstT, 'START');
+          syntax.parseThrow(context, nextTs);
+          addLineNumber(firstT, 'END');
           break;
 
         default:
           return syntax.throwWordError(firstT);
       }
     } else {
+      addLineNumber(firstT, 'START');
       // 其他语句，直接返回原来的代码
       syntax.parseExpression(context, '', line);
+      addLineNumber(firstT, 'END');
     }
   }
 
-
   // 返回最终的代码
   if (!isNested) {
-    // 生成变量列表声明
-    if (context.vars.length > 0) {
-      var varsCode = '    var ' + context.vars.join(', ') + ';\n';
-    } else {
-      var varsCode = '';
-    }
-
-    // 生成延迟执行代码
-    if (context.defers.length > 0) {
-      var indent = '    ';
-      var defersCode = [indent + 'var $$_defers = [];'];
-      context.defers.forEach(function (fn) {
-        defersCode.push(indent + '$$_defers.push(' + fn + ');');
-      });
-      defersCode.push(indent + 'var $$_oldCallback = $$_callback;');
-      defersCode.push(indent + '$$_callback = $$_callback_global = function () {');
-      defersCode.push(indent + '  var $$_args = arguments;');
-      defersCode.push(indent + '  $$_runtime.runDefers($$_defers, $$_args[0], function (err) {');
-      defersCode.push(indent + '    if (err) $$_runtime.error(err.stack);');
-      defersCode.push(indent + '    $$_oldCallback.apply(null, $$_args);');
-      defersCode.push(indent + '  });');
-      defersCode.push(indent + '};');
-      defersCode = defersCode.join('\n') + '\n';
-    } else {
-      defersCode = '';
-    }
-
-    // 生成最终代码并返回
-    context.args.push('$$_callback')
-    var code = '(function (' + context.args.join(', ') + ') {\n' +
-               '  "use strict";\n' +
-               '  if (arguments.length !== ' + context.args.length + ') {\n' +
-               '    var $$_callback = arguments[arguments.length - 1];\n' +
-               '    var $$_err = new Error("Not enough arguments");\n' +
-               '    if (typeof($$_callback) === "function") {\n' +
-               '      return $$_callback($$_err);\n' +
-               '    } else {\n' +
-               '      throw $$_err;\n' +
-               '    }\n' +
-               '  }\n' +
-               '  var $$_callback_global = $$_callback;\n' +
-               '  try {\n' +
-               varsCode +
-               defersCode +
-               context.code.join('\n') + '\n' +
-               '  } catch (err) {\n' +
-               '    return $$_callback_global(err);\n' +
-               '  }\n' +
-               '})';
-
-    //console.log(context);
-    return code;
+    return syntax.wrap(context);
   }
 };
 
@@ -1778,7 +1972,7 @@ syntax.parseNested = function (context, isReturn) {
   var brace = 0;
   while (ret = syntax.readLine(tokenList)) {
     tokenList = ret.next;
-    var line = ret.line;
+    var line = syntax.noBlankToken(ret.line);
     var firstT = line[0];
     var lastT = line[line.length - 1];
     if (firstT.type === TOKEN.SYMBLE && firstT.text === '}') {
@@ -1800,6 +1994,7 @@ syntax.parseNested = function (context, isReturn) {
   if (isReturn) {
     body = syntax.addReturnAtEnd(body, true);
   }
+  
   context.tokenList = body;
   syntax.parse(context, true);
   context.tokenList = tokenList;
@@ -1879,14 +2074,14 @@ syntax.parseLet = function (context, tokenList) {
         return syntax.throwWordError(tokenList[0], 'Unexpected end of input')
       }
       syntax.parseAwait(context, names, tokenList.slice(1));
-    } else if (tokenList[0].text === 'require') {
-      if (names.length > 1) {
-        return syntax.throwWordError(tokenList[0], 'Not support tuple assignment');
-      }
+    } else if (tokenList[0].text === 'function') {
       if (!tokenList[1]) {
         return syntax.throwWordError(tokenList[0], 'Unexpected end of input')
       }
-      syntax.parseRequire(context, names, tokenList.slice(1));
+      if (names.length > 1) {
+        return syntax.throwWordError(tokenList[0], 'Not support tuple assignment');
+      }
+      syntax.parseFunction(context, names[0], tokenList.slice(1));
     } else {
       return syntax.throwWordError(tokenList[0]);
     }
@@ -1896,26 +2091,6 @@ syntax.parseLet = function (context, tokenList) {
     }
     syntax.parseExpression(context, names[0], tokenList.slice(0));
   }
-};
-
-/**
- * 解析require语句
- * 格式为： require "abc" 或者使用变量 require x
- * 输入的单词中，已经去掉了require
- *
- * @param {Object} context
- * @param {Array} names 保存的变量名称
- * @param {Array} tokenList
- */
-syntax.parseRequire = function (context, names, tokenList) {
-  if (tokenList.length !== 1) {
-    return syntax.throwWordError(tokenList[0]);
-  }
-  if (!(tokenList[0].type === TOKEN.IDENTIFIER || tokenList[0].type === TOKEN.STRING)) {
-    return syntax.throwWordError(tokenList[0]);
-  }
-  var code = (names.length > 0 ? names[0] + ' = ' : '') + 'require(' + tokenList[0].text + ');';
-  syntax.codePushLine(context, code);
 };
 
 /**
@@ -1937,19 +2112,18 @@ syntax.parseRequire = function (context, names, tokenList) {
  */
 syntax.parseExpression = function (context, name, tokenList) {
   var code = '';
+  var isName = false;
   tokenList.forEach(function (t) {
-    switch (t.type) {
-      case TOKEN.IDENTIFIER:
-      case TOKEN.NUMBER:
-      case TOKEN.STRING:
-      case TOKEN.SYMBLE:
-        code += t.text;
-        break;
-      default:
-        return syntax.throwWordError(t);
+    if (t.type === TOKEN.IDENTIFIER || t.type === TOKEN.KEYWORD) {
+      // 相邻的关键字或标识符必须用空格隔开
+      code += (isName ? ' ' : '') + t.text;
+      isName = true;
+    } else {
+      code += t.text;
+      isName = false;
     }
   });
-  code = (name ? name + ' = ' : '') + code.trim() + ';';
+  code = (name ? name + ' = ' : '') + code.trim();
   syntax.codePushLine(context, code);
 };
 
@@ -1994,14 +2168,13 @@ syntax.parseAwait = function (context, names, tokenList) {
       call += '(';
     }
   }
-  // 生成 function ($$_err, name) {
+  // 生成 function (arg1, arg2, ...) {
   if (names.length > 0) {
     var code = syntax.getMultiArgumentsCode(names);
   }
-  call += 'function ($$_err' + (names.length > 0 ? ', ' + code.args.join(', ') : '') + ') {';
+  call += 'function (' + (names.length > 0 ? code.args.join(', ') : '') + ') {';
   syntax.codePushLine(context, call);
   context.indent++;
-  syntax.codePushLine(context, 'if ($$_err) throw $$_err;');
   if (names.length > 0) {
     code.init.forEach(function (line) {
       syntax.codePushLine(context, line);
@@ -2230,13 +2403,126 @@ syntax.parseFor = function (context, tokenList) {
                 indent + '});';
     syntax.codePushLine(context, code);
   }
-
 };
 
+/**
+ * 解析throw语句
+ * 格式为： throw 或者 throw new Error('Error')
+ * 输入的单词中，已经去掉了throw
+ *
+ * @param {Object} context
+ * @param {Array} tokenList
+ */
+syntax.parseThrow = function (context, tokenList) {
+  if (tokenList.length < 1) {
+    syntax.codePushLine(context, 'return $$_callback_global(new Error());');
+  } else {
+    syntax.parseExpression(context, 'var $$_err', tokenList);
+    syntax.codePushLine(context, 'return $$_callback_global($$_err);');
+  }
+};
+
+/**
+ * 解析function语句
+ * 格式为： function (arg1, arg2) {
+ * 或者无参数  function {
+ * 输入的单词中，已经去掉了function
+ *
+ * @param {Object} context
+ * @param {String} name 保存的变量名称，可以为空
+ * @param {Array} tokenList
+ */
+syntax.parseFunction = function (context, name, tokenList) {
+  var lastT = tokenList[tokenList.length - 1];
+  if (!(lastT.type === TOKEN.SYMBLE && lastT.text === '{')) {
+    return syntax.throwWordError(lastT);
+  }
+
+  // 解析参数 function
+  var argNames = [];
+  if (tokenList.length === 1) {
+    // 无参数
+  } else {
+    var argTokens = tokenList.slice(0, tokenList.length - 1);
+    var firstT = argTokens[0];
+    var lastT = argTokens[argTokens.length - 1];
+    if (!(firstT.type === TOKEN.SYMBLE && firstT.text === '(')) {
+      return syntax.throwWordError(firstT);
+    }
+    if (!(lastT.type === TOKEN.SYMBLE && lastT.text === ')')) {
+      return syntax.throwWordError(firstT);
+    }
+    var isComma = true;
+    argTokens.slice(1, argTokens.length - 1).forEach(function (t) {
+      if (isComma && t.type === TOKEN.IDENTIFIER) {
+        argNames.push(t.text);
+        isComma = false;
+      } else if (!isComma && t.type === TOKEN.SYMBLE && t.text === ',') {
+        isComma = true;
+      } else {
+        return syntax.throwWordError(t);
+      }
+    });
+  }
+
+  // 解析函数体
+  var newContext = syntax.newContext(context);
+  newContext.vars = [];
+  newContext.indent += 2;
+  syntax.parseNested(newContext, true);
+  
+  // 封装函数
+  newContext.args = argNames;
+  var body = syntax.wrap(newContext);
+  syntax.codePushLine(context, '');
+  var code = (name ? name + ' = ' : '') + body + ';';
+  syntax.codePushLine(context, code);
+  syntax.codePushLine(context, '');
+  context.tokenList = newContext.tokenList;  
+};
+
+/**
+ * 取函数体
+ *
+ * @param {Array} tokenList
+ * @return {Object}
+ *   - {Array} body
+ *   - {Array} next
+ */
+/*
+syntax.getFunctionBody = function (tokenList) {
+  var ret;
+  var body = [];
+  var brace = 0;
+  while (ret = syntax.readLine(tokenList)) {
+    tokenList = ret.next;
+    var line = syntax.noBlankToken(ret.line);
+    var firstT = line[0];
+    var lastT = line[line.length - 1];
+    if (firstT.type === TOKEN.SYMBLE && firstT.text === '}') {
+      brace--;
+    } else if (lastT.type === TOKEN.SYMBLE && lastT.text === '{') {
+      brace++;
+    }
+    if (brace < 0) {
+      // 如果末尾为这种情况：  } else {
+      // 把 else { 接到剩余的单词前面
+      if (line.length > 1) {
+        tokenList = line.slice(1).concat(tokenList);
+      }
+      break;
+    } else {
+      body = body.concat(line);  
+    }
+  }
+  
+  return {body: body, next: tokenList};
+};
+*/
 });
 
 require.define("/index.js",function(require,module,exports,__dirname,__filename,process,global){/**
- * Tea.js
+ * bright
  *
  * @author 老雷<leizongmin@gmail.com>
  */

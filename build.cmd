@@ -1,2 +1,2 @@
 @echo off
-browserify index.js -o build/tea.js
+browserify index.js -o build/bright.js
