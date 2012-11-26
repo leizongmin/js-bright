@@ -1,5 +1,5 @@
 {
-  "name":           "teajs",
+  "name":           "bright",
   "main":           "./index.js",
   "version":        "0.0.1",
   "description":    "A tiny script language, add async/await support for javascript",
@@ -14,7 +14,7 @@
   }],
   "repository": {
     "type": "git",
-    "url": "git://github.com/leizongmin/tea.js.git"
+    "url": "git://github.com/leizongmin/js-bright.git"
   },
   "engines": {
     "node":         ">= 0.8.0"
