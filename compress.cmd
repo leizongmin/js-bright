@@ -1,2 +1,2 @@
 @echo off
-uglifyjs build/tea.js -o build/tea.min.js
+uglifyjs build/bright.js -o build/bright.min.js
