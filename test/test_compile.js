@@ -133,14 +133,6 @@ describe('compile', function () {
         done();
       });
     });
-    it('等待一段时间', function (done) {
-      var fn = compile('var ret, err\nlet err, ret = await 100\nreturn ret');
-      fn(function (err, ret) {
-        should.equal(err, null);
-        ret.should.equal(100);
-        done();
-      });
-    });
     it('等待异步调用（多个返回值）', function (done) {
       var async = function (callback) {
         process.nextTick(function () {
@@ -426,6 +418,29 @@ describe('compile', function () {
           ret.should.equal(1000);
           done();
         });
+      });
+    });
+  });
+
+  describe('sleep', function () {
+    it('等待一段时间 常量', function (done) {
+      var fn = compile('sleep 200');
+      var start = Date.now();
+      fn(function (err) {
+        var end = Date.now();
+        should.equal(err, null);
+        should.equal(end - start > 200 * 0.8, true);
+        done();
+      });
+    });
+    it('等待一段时间 变量', function (done) {
+      var fn = compile('argument n\nsleep n * 2');
+      var start = Date.now();
+      fn(50, function (err) {
+        var end = Date.now();
+        should.equal(err, null);
+        should.equal(end - start > 50 * 2 * 0.8, true);
+        done();
       });
     });
   });
