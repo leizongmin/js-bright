@@ -6,7 +6,7 @@ Tea.js
 安装
 
 ```bash
-npm install tea
+npm install teajs
 ```
 
 新建文件：test.tea

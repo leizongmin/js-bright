@@ -1,5 +1,5 @@
 {
-  "name":           "tea",
+  "name":           "teajs",
   "main":           "./index.js",
   "version":        "0.0.1",
   "description":    "A tiny script language, add async/await support for javascript",
