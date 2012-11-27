@@ -1,0 +1,123 @@
+#!/usr/bin/env node
+
+/**
+ * Bright 命令行工具
+ *
+ * @author 老雷<leizongmin@gmail.com>
+ */
+
+var fs = require('fs');
+var path = require('path');
+var program = require('commander');
+var bright = require('../');
+var version = require('../package.json').version;
+var bin = require('./bright');
+var L = console.log;
+
+
+program
+  .version(version)
+  .usage('[options] <file>')
+  .option('-c, --compile', 'compile to JavaScript and save as .js files')
+  .option('-w, --watch', 'watch scripts for changes and rerun commands')
+  .option('-i, --input <file>', 'input file or directory')
+  .option('-o, --output <file>', 'where to output');
+
+program.on('--help', function () {
+  L('  Examples:');
+  L('');
+  L('    $ bright test.bright');
+  L('    $ bright -c -i test.bright -o test.js');
+  L('    $ bright -c -w -i test.bright -o test.js');
+  L('');
+});
+
+program.parse(process.argv);
+
+
+/**
+ * 编译文件，返回js代码
+ *
+ * @param {Stirng} filename
+ * @return {String}
+ */
+var compileFile = function (filename) {
+  var source = fs.readFileSync(filename, 'utf8');
+  var js = bright.parser.parse(source);
+  js = '(function () {\n' +
+       '  if (typeof(window) === "undefined") {\n' +
+       '    var $$_runtime = require("bright").runtime;\n' +
+       '  } else {\n' +
+       '    var $$_runtime = Bright.runtime;\n' +
+       '  }\n' +
+       js + '(function (err) {\n' +
+       '  if (err) console.error(err && err.stack);\n' +
+       '});\n' +
+       '})();';
+  return js;
+};
+
+/**
+ * 执行编译命令
+ */
+var runCompile = function () {
+  var input = path.resolve(program.input);
+  var output = path.resolve(program.output);
+
+  var stats_in = fs.statSync(input);
+  if (stats_in.isFile()) {
+
+    // 编译单个文件
+    var js = compileFile(input);
+    if (!program.output) {
+      L('');
+      L(js);
+      L('');
+    } else {
+      L('compile file: %s', input);
+      fs.writeFileSync(output, js);
+      L('save to: %s', output);
+    }
+
+  } else if (stats_in.isDirectory()) {
+
+    // 编译目录
+    L('compile directory: %s', input);
+    var files = fs.readdirSync(input);
+
+    // 如果目标目录不存在，则创建
+    if (!fs.existsSync(output)) {
+      L('create directory: %s', output);
+      fs.mkdirSync(output);
+    }
+
+    files.forEach(function (filename) {
+      if (/\.bright$/img.test(filename)) {
+        var savefile = filename.substr(0, filename.length - 7) + '.js';
+        filename = path.resolve(input, filename);
+        savefile = path.resolve(program.output, savefile);
+        var js = compileFile(filename);
+        L('compile file: %s', filename);
+        fs.writeFileSync(savefile, js);
+        L('save to: %s', savefile);
+      }
+    });
+
+  } else {
+    L('unknown file type: %s', program.input);
+  }
+};
+
+
+if (program.compile) {
+  // 编译bright文件
+  runCompile();
+  if (program.watch) {
+    // 监视文件改动
+  }
+} else if (program.args.length > 0) {
+  // 直接执行bright文件
+  var filename = path.resolve(program.args[0]);
+  require(filename);
+}
+

@@ -9,17 +9,19 @@
     {"name": "Lei Zongmin", "email": "leizongmin@gmail.com"}
   ],
   "licenses":     [{
-    "type":       "MIT",
-    "url":        "https://raw.github.com/leizongmin/js-bright/master/MIT-License"
+    "type":         "MIT",
+    "url":          "https://raw.github.com/leizongmin/js-bright/master/MIT-License"
   }],
   "repository": {
-    "type": "git",
-    "url": "git://github.com/leizongmin/js-bright.git"
+    "type":         "git",
+    "url":          "git://github.com/leizongmin/js-bright.git"
   },
   "engines": {
     "node":         ">= 0.8.0"
   },
-  "dependencies":	{},
+  "dependencies":	{
+    "commander":    ">= 1.1.1"
+  },
   "devDependencies": {
     "should":       "*",
     "mocha":        ">= 1.2",
@@ -28,5 +30,8 @@
   },
   "scripts": {
     "test":         "mocha -t 5000"
+  },
+  "bin": {
+    "bright":       "./bin/bright"
   }
 }
