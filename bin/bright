@@ -108,16 +108,26 @@ var runCompile = function () {
   }
 };
 
-
-if (program.compile) {
-  // 编译bright文件
-  runCompile();
-  if (program.watch) {
-    // 监视文件改动
+/**
+ * 解析命令并执行
+ */
+var run = function () {
+  if (program.compile) {
+    // 编译bright文件
+    runCompile();
+    if (program.watch) {
+      // 设置为false，避免重复注册watch
+      program.watch = false;
+      // 监视文件改动
+      fs.watch(program.input, function () {
+        // 重新运行命令
+        run();
+      });
+    }
+  } else if (program.args.length > 0) {
+    // 直接执行bright文件
+    var filename = path.resolve(program.args[0]);
+    require(filename);
   }
-} else if (program.args.length > 0) {
-  // 直接执行bright文件
-  var filename = path.resolve(program.args[0]);
-  require(filename);
-}
-
+};
+run();
