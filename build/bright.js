@@ -399,10 +399,7 @@ require.define("/lib/index.js",function(require,module,exports,__dirname,__filen
 
 var fs = require('fs');
 var path = require('path');
-var runtime = exports.runtime = require('./runtime/core');
-var define = exports.define = require('./compiler/define');
-var parser = exports.parser = require('./compiler/parser');
-
+require('./browser_support');
 
 // 检查当前运行环境
 if (typeof(window) === 'undefined') {
@@ -412,7 +409,6 @@ if (typeof(window) === 'undefined') {
 }
 var isNode = !isBrowser;
 
-
 // 是否显示编译出来的js代码，开启输出调试代码的方法：
 // Node.js:   设置环境变量 DEBUG=bright
 // 浏览器：   window._BRIGHT_DEBUG= true
@@ -421,6 +417,12 @@ if ((isNode && /bright/img.test(process.env.DEBUG)) || (isBrowser && typeof(_BRI
 } else {
   var debug = function () { };
 }
+
+
+var runtime = exports.runtime = require('./runtime/core');
+var define = exports.define = require('./compiler/define');
+var parser = exports.parser = require('./compiler/parser');
+
 
 
 /**
@@ -433,9 +435,41 @@ exports.compile = function (source) {
   var $$_runtime = runtime;
   var $$_javascript = parser.parse(source);
   debug($$_javascript);
-  return eval($$_javascript);
+  var fn = eval($$_javascript);
+  if (typeof(fn) !== 'function') {
+    var tmpName = '$$_ie_' + Date.now() + parseInt(Math.random() * 100000);
+    var fn = eval('var ' + tmpName + '=' + $$_javascript + ';' + tmpName);
+  }
+  return fn;
 };
 
+/**
+ * 封装文件
+ *
+ * @param {String} source
+ * @return {Strin}
+ */
+exports._wrapFile = function (source) {
+  return '(function () {\n' +
+         exports._wrapGetRuntime() +
+         source + '(function (err) {\n' +
+         '  if (err) console.error(err && err.stack);\n' +
+         '});\n' +
+         '})();';
+};
+
+/**
+ * 封装runtime代码
+ *
+ * @return {String}
+ */
+exports._wrapGetRuntime = function () {
+  return '\nif (typeof(window) === "undefined") {\n' +
+         '  var $$_runtime = require("bright").runtime;\n' +
+         '} else {\n' +
+         '  var $$_runtime = Bright.runtime;\n' +
+         '}\n';
+};
 
 
 if (isNode) {
@@ -472,6 +506,11 @@ if (isNode) {
     console.error('Cannot register namespace "Bright".');
   }
 
+  /**
+   * 运行bright脚本
+   *
+   * @param {String} source
+   */
   var run = function (source) {
     var fn = exports.compile(source);
     fn(function (err) {
@@ -535,12 +574,52 @@ require.define("fs",function(require,module,exports,__dirname,__filename,process
 
 });
 
+require.define("/lib/browser_support.js",function(require,module,exports,__dirname,__filename,process,global){/**
+ * 支持低版本的浏览器
+ *
+ * @author 老雷<leizongmin@gmail.com>
+ */
+
+// 如果浏览器不支持Array.forEach()，则添加
+if (typeof(Array.prototype.forEach) !== 'function') {
+  Array.prototype.forEach = function (cb) {
+    var len = this.length;
+    for (var i = 0; i < len; i++) {
+      cb(this[i], i, this);
+    }
+  };
+}
+// 如果浏览器不支持Array.indexOf，则添加
+if (typeof(Array.prototype.indexOf) !== 'function') {
+  Array.prototype.indexOf = function (obj) {                 
+    for (var i = 0, len = this.length; i < len; i++) {
+      if (this[i] === obj) {
+        return i;
+      }
+    }
+    return -1;
+  };
+}
+// 如果浏览器不支持Array.isArray()，则添加
+if (typeof(Array.isArray) !== 'function') {
+  Array.isArray  = function (arr) {
+    return (arr instanceof Array) ? true : false;
+  };
+}
+// 如果浏览器不支持String.trim()，则添加
+if (typeof(String.prototype.trim) !== 'function') {
+  String.prototype.trim = function () {
+    return this.replace(/^\s*((?:[\S\s]*\S)?)\s*$/, '$1');
+  };
+}
+
+});
+
 require.define("/lib/runtime/core.js",function(require,module,exports,__dirname,__filename,process,global){/**
  * bright 运行时库/核心
  *
  * @author 老雷<leizongmin@gmail.com>
  */
-
 
 var runtime = module.exports;
 
@@ -716,7 +795,7 @@ exports.TOKEN = {
   NAME:       8,    // 名称（可能为关键字或标识符）
   KEYWORD:    16,   // 关键词
   IDENTIFIER: 32,   // 标识符
-  COMMENT:    64,   // 注释
+  COMMENT:    64    // 注释
 };
 
 
@@ -824,7 +903,11 @@ exports.parse = function (source) {
   // 词法分析
   var tokenList = token.parse(source);
   if (!Array.isArray(tokenList)) {
-    return _throwError(tokenList.line, tokenList.column, tokenList.error);
+    if (tokenList instanceof Error) {
+      return _throwError(0, 0, tokenList.message);
+    } else {
+      return _throwError(tokenList.line, tokenList.column, tokenList.error);
+    }
   }
 
   // 开始语法分析
@@ -842,97 +925,6 @@ exports.parse = function (source) {
 };
 
 
-
-
-
-// 测试
-//exports.parse('a = 1; b = 2;');
-//exports.parse('if 0 { b() }');
-//console.log(exports.parse('argument x ,y z'));
-//console.log(exports.parse('var x ,y z'));
-//console.log(exports.parse('let a = require b'));
-//console.log(exports.parse('let b = require "b"'));
-//console.log(exports.parse('let c[a], b.c.a, b[0], c[a.b] = await a'));
-//console.log(exports.parse('let b.c = require a'));
-//console.log(exports.parse('let b.cb = 1+1'));
-//console.log(exports.parse('return a.b.c, b[ds][0]'));
-//console.log(exports.parse('let a = await 1000'));
-/*
-var code = 'argument x, y, z\n' +
-           'var a b c\n' +
-           'defer xxx\n' + 
-           'defer yyy(1,2,3)\n' +
-           'defer {\n' +
-           '  ooxx()\n' +
-           '  xxoo(1,2,3)\n' +
-           '  await yy\n' +
-           '  let b = await zz\n' +
-           '}\n' +
-           'let a = require(b)\n' +
-           'require("xxx")\n' +
-           'let b = await x.y\n' +
-           'let b = await y(1,2,3)\n' +
-           'var e\n' +
-           'let z = false\n' + 
-           'let c = (20 + 5) / 4\n' +
-           'require(x)\n' +
-           'await z\n' +
-           'let a,b,c = await z(3)\n' +
-           'let a b = await x\n' +
-           'let a = c(1,2,3)\n' +
-           'ooxx(a[0 + Math.sin(50)])\n' +
-           'return\n' +
-           'return a b 123\n' +
-           'let ret = a[0][1]\n' +
-           'return ret\n' +
-           'if a + b = c {\n' +
-           '  let b = 2\n' +
-           '} elseif b + b {\n' +
-           '  let c = 55455\n' +
-           '} else {\n' +
-           '  let d = await cc\n' +
-           '}\n' +
-           'await bbb\n' +
-           'return 12345\n' +
-           'for a >= b {\n' +
-           '  await bb\n' +
-           '  break\n' +
-           '  continue\n' +
-           '}\n' +
-           'for i in obj.xx {\n' +
-           '  await cc\n' +
-           '}\n' +
-           'await bb\n' +
-           'let a = function (a, b, c) {\n' +
-           '  if a + b = 1 {\n' +
-           '    await yy\n' +
-           '  }\n' +
-           '  await gg\n' +
-           '  return x\n' +
-           '}\n' +
-           'for {\n' +
-           '  await yyyyy\n' +
-           '}\n' +
-           'return a';
-var js = exports.parse(code);           
-console.log(js);
-console.log(eval(js));
-*/
-/*
-var code = 'argument x y z\n' +
-           'let a = function (a, b, c) {\n' +
-           '  if a + b = 1 {\n' +
-           '    await yy\n' +
-           '  }\n' +
-           '  await gg\n' +
-           '  return x\n' +
-           '}\n' +
-           'for {\n' +
-           '  await yyyyy\n' +
-           '}\n' +
-           'return a';
-console.log(exports.parse(code));
-*/
 });
 
 require.define("/lib/compiler/token.js",function(require,module,exports,__dirname,__filename,process,global){/**
@@ -961,7 +953,7 @@ var STATUS = {
   STRING:     4,          // 字符串
   NAME:       8,          // 名称（可能为关键字或标识符）
   COMMENT_1:  16,         // "//"开头的单行注释
-  COMMENT_2:  32,         // "/*"开头的多行注释
+  COMMENT_2:  32          // "/*"开头的多行注释
 };
 
 // 字符ASCII编码
@@ -978,7 +970,7 @@ var CHAR = {
   BACKSLASH:      92,     // 反斜杠 \
   DOLLAR:         36,     // 美元符号 $
   STAR:           42,     // 星号 *
-  FORWARDSLASH:   47,     // 斜杠 /
+  FORWARDSLASH:   47      // 斜杠 /
 };
 
 /**
@@ -1838,7 +1830,7 @@ syntax.parse = function (tokenList, isNested) {
       defers: [],     // 延迟执行列表
       tokenList:  tokenList,  // 剩下的单词列表
       code:   [],     // 生成的js代码
-      indent: 2,      // 缩进
+      indent: 2       // 缩进
     };
   }
 
@@ -2032,13 +2024,15 @@ syntax.parseArgument = function (context, tokenList) {
 
 /**
  * 解析var语句
- * 格式为： var x,y,z 或者省略逗号： var x y z
+ * 格式为： var x,y,z 
+ * 可以同时初始化： var x=0, y=1, z=2
  * 输入的单词中，已经去掉了var
  *
  * @param {Object} context
  * @param {Array} tokenList
  */
 syntax.parseVar = function (context, tokenList) {
+  /*
   var isComma = false;
   tokenList.forEach(function (t) {
     if (t.type === TOKEN.IDENTIFIER) {
@@ -2048,6 +2042,74 @@ syntax.parseVar = function (context, tokenList) {
       isComma = true;
     } else {
       syntax.throwWordError(t);
+    }
+  });
+  */
+  var brackets = [];
+  var isInit = false;
+  var currName = null;
+  var initTokens = [];
+  var lastT = tokenList[tokenList.length - 1];
+  tokenList.push({
+    type:   TOKEN.SYMBLE,
+    text:   ',',
+    line:   lastT.line,
+    column: lastT.column + lastT.text.length
+  });
+  tokenList.forEach(function (t) {
+    if (isInit) {
+      if (t.type === TOKEN.SYMBLE) {
+        if (t.text === '(' || t.text === '[') {
+          initTokens.push(t);
+          brackets.push(t);
+        } else if (t.text === ')') {
+          var t2 = brackets.pop();
+          if (t2.text !== '(') {
+            return syntax.throwWordError(t);
+          }
+          initTokens.push(t);
+        } else if (t.text === ']') {
+          var t2 = brackets.pop();
+          if (t2.text !== '[') {
+            return syntax.throwWordError(t);
+          }
+          initTokens.push(t);
+        } else if (t.text === ',') {
+          // 括号里面的逗号不算分隔多个变量
+          if (brackets.length > 0) {
+            initTokens.push(t);
+          } else {
+            // 初始化结束，添加初始化语句
+            initTokens.push({
+              type:   TOKEN.SYMBLE,
+              text:   ';',
+              line:   t.line,
+              column: t.column
+            });
+            syntax.parseExpression(context, currName, initTokens);
+            isInit = false;
+          }
+        }
+      } else {
+        initTokens.push(t);
+      }
+    } else {
+      if (t.type === TOKEN.IDENTIFIER) {
+        context.vars.push(t.text);
+        currName = t.text;
+        brackets = [];
+        initTokens = [];
+      } else if (currName && t.type === TOKEN.SYMBLE) {
+        if (t.text === ',') {
+          isInit = false;
+        } else if (t.text === '=') {
+          isInit = true;
+        } else {
+          return syntax.throwWordError(t);
+        }
+      } else {
+        return syntax.throwWordError(t);
+      }
     }
   });
 };
@@ -2520,6 +2582,7 @@ require.define("/index.js",function(require,module,exports,__dirname,__filename,
  *
  * @author 老雷<leizongmin@gmail.com>
  */
+
 
 module.exports = require('./lib');
 });

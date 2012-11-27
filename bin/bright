@@ -44,17 +44,7 @@ program.parse(process.argv);
 var compileFile = function (filename) {
   var source = fs.readFileSync(filename, 'utf8');
   var js = bright.parser.parse(source);
-  js = '(function () {\n' +
-       '  if (typeof(window) === "undefined") {\n' +
-       '    var $$_runtime = require("bright").runtime;\n' +
-       '  } else {\n' +
-       '    var $$_runtime = Bright.runtime;\n' +
-       '  }\n' +
-       js + '(function (err) {\n' +
-       '  if (err) console.error(err && err.stack);\n' +
-       '});\n' +
-       '})();';
-  return js;
+  return bright._wrapFile(js);
 };
 
 /**
