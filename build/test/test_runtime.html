@@ -9,7 +9,7 @@
 <h1>北京时间：<span id="time"></span></h1>
 </body>
 </html>
-<script src="bright.js"></script>
+<script src="../bright.runtime.min.js"></script>
 <script>
 (function () {
   window.setNumber = function (n) {
@@ -21,18 +21,5 @@
   };
 })();
 </script>
-<script type="text/bright">
-var n
-let n = 60
-for n >= 0 {
-  setNumber(n)
-  sleep 1000
-  n--
-}
-</script>
-<script type="text/bright">
-for {
-  setTime()
-  sleep 500
-}
-</script>
+<script src="test_runtime_1.js"></script>
+<script src="test_runtime_2.js"></script>

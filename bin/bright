@@ -27,8 +27,8 @@ program.on('--help', function () {
   L('  Examples:');
   L('');
   L('    $ bright test.bright');
-  L('    $ bright -c -i test.bright -o test.js');
-  L('    $ bright -c -w -i test.bright -o test.js');
+  L('    $ bright -i test.bright -o test.js');
+  L('    $ bright -w -i test.bright -o test.js');
   L('');
 });
 
@@ -102,7 +102,7 @@ var runCompile = function () {
  * 解析命令并执行
  */
 var run = function () {
-  if (program.compile) {
+  if (program.compile || program.input) {
     // 编译bright文件
     runCompile();
     if (program.watch) {

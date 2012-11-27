@@ -1,0 +1,4 @@
+for {
+  setTime()
+  sleep 500
+}

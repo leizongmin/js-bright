@@ -1,0 +1,7 @@
+var n
+let n = 60
+for n >= 0 {
+  setNumber(n)
+  sleep 1000
+  n--
+}

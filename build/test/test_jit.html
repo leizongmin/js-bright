@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>测试页面</title>
+</head>
+<body>
+<h1>倒计时：<span id="number">--</span>秒</h1>
+<h1>北京时间：<span id="time"></span></h1>
+</body>
+</html>
+<script src="../bright.min.js"></script>
+<script>
+(function () {
+  window.setNumber = function (n) {
+    document.getElementById('number').innerText = n;
+  };
+  
+  window.setTime = function () {
+    document.getElementById('time').innerText = new Date().toLocaleTimeString();
+  };
+})();
+</script>
+<script type="text/bright">
+var n
+let n = 60
+for n >= 0 {
+  setNumber(n)
+  sleep 1000
+  n--
+}
+</script>
+<script type="text/bright">
+for {
+  setTime()
+  sleep 500
+}
+</script>
