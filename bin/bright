@@ -9,7 +9,7 @@
 var fs = require('fs');
 var path = require('path');
 var program = require('commander');
-var bright = require('../');
+var bright = global.Bright = require('../');
 var version = require('../package.json').version;
 var bin = require('./bright');
 var L = console.log;
