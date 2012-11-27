@@ -488,7 +488,7 @@ if (isNode) {
   exports.load = function (filename) {
     var source = fs.readFileSync(filename, 'utf8');
     var js = parser.parse(source);
-    js = 'var $$_runtime = require("bright").runtime;\n' +
+    js = 'var $$_runtime = (global.Bright || require("bright")).runtime;\n' +
          js + '(function (err) {\n' +
          '  if (err) console.error(err && err.stack);\n' +
          '});';
@@ -2032,19 +2032,6 @@ syntax.parseArgument = function (context, tokenList) {
  * @param {Array} tokenList
  */
 syntax.parseVar = function (context, tokenList) {
-  /*
-  var isComma = false;
-  tokenList.forEach(function (t) {
-    if (t.type === TOKEN.IDENTIFIER) {
-      isComma = false;
-      context.vars.push(t.text);
-    } else if (t.type === TOKEN.SYMBLE && t.text === ',' && !isComma) {
-      isComma = true;
-    } else {
-      syntax.throwWordError(t);
-    }
-  });
-  */
   var brackets = [];
   var isInit = false;
   var currName = null;
@@ -2089,6 +2076,8 @@ syntax.parseVar = function (context, tokenList) {
             syntax.parseExpression(context, currName, initTokens);
             isInit = false;
           }
+        } else {
+          initTokens.push(t);
         }
       } else {
         initTokens.push(t);

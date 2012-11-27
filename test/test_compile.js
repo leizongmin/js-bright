@@ -130,7 +130,7 @@ describe('compile', function () {
         }
         return ret;
       };
-      var fn = compile('argument sum\nvar a=101,b=sum(1,2,3),c=888,d=sum(4,5,6)\nreturn a,b,c,d');
+      var fn = compile('argument sum\nvar a=101,b=sum(1,2,3).toString(),c=888,d=sum(4,5,6)\nreturn a,b,c,d');
       fn(sum, function (err, a, b, c, d) {
         should.equal(err, null);
         should.equal(a, 101);
