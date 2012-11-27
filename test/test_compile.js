@@ -93,8 +93,55 @@ describe('compile', function () {
         done();
       });
     });
+    it('声明多个变量', function (done) {
+      var fn = compile('var a,b\nreturn a,b,10');
+      fn(function (err, a, b, c) {
+        should.equal(err, null);
+        should.equal(a, undefined);
+        should.equal(b, undefined);
+        should.equal(c, 10);
+        done();
+      });
+    });
+    it('声明变量并初始化', function (done) {
+      var fn = compile('var a=101\nreturn a');
+      fn(function (err, a) {
+        should.equal(err, null);
+        should.equal(a, 101);
+        done();
+      });
+    });
+    it('声明多个变量并初始化', function (done) {
+      var fn = compile('var a=101,b,c=888,d\nreturn a,b,c,d');
+      fn(function (err, a, b, c, d) {
+        should.equal(err, null);
+        should.equal(a, 101);
+        should.equal(b, undefined);
+        should.equal(c, 888);
+        should.equal(d, undefined);
+        done();
+      });
+    });
+    it('声明多个变量并初始化（调用函数）', function (done) {
+      var sum = function () {
+        var ret = 0;
+        for (var i = 0, len = arguments.length; i < len; i++) {
+          ret += arguments[i];
+        }
+        return ret;
+      };
+      var fn = compile('argument sum\nvar a=101,b=sum(1,2,3),c=888,d=sum(4,5,6)\nreturn a,b,c,d');
+      fn(sum, function (err, a, b, c, d) {
+        should.equal(err, null);
+        should.equal(a, 101);
+        should.equal(b, 6);
+        should.equal(c, 888);
+        should.equal(d, 15);
+        done();
+      });
+    });
   });
-
+  
   describe('await', function () {
     it('等待异步调用（无返回值，不带括号）', function (done) {
       var async = function (callback) {
