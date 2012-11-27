@@ -41,12 +41,11 @@ body {
   <div id="box"></div>
   <div id="code">
     <pre><code>
-/* 排序 */
-var i, j
-i = 0
-for i < data.length - 1 {
+/* 排序动画 */
+var i = 0, j, len = data.length
+for i < len {
   j = i + 1
-  for j < data.length {  
+  for j < len {  
     swap(i, j)    // 对比相邻的两个数并排序
     sleep 10      // 暂停10毫秒
     j++
@@ -59,7 +58,7 @@ alert('OK')
 </body>
 </html>
 <script src="http://code.jquery.com/jquery-1.8.3.min.js"></script>
-<script src="https://raw.github.com/leizongmin/js-bright/master/build/bright.min.js"></script>
+<script src="http://raw.github.com/leizongmin/js-bright/master/build/bright.min.js"></script>
 <script>
 /* 此代码用于绘制图像 */
 var COUNT = 100;
@@ -96,6 +95,7 @@ data.forEach(function (d, i) {
 var $line = $('.line');
 var swap = function (a, b) {
   $line.removeClass('active');
+  $('#line-' + a).addClass('active');
   $('#line-' + b).addClass('active');
   if (data[a] > data[b]) {
     var d = data[a];
@@ -105,15 +105,15 @@ var swap = function (a, b) {
     setHeight(b);
   }
   console.log(data.join(', '));
+  return data[a] < data[b] ? data[a] : data[b];
 }
 </script>
 <script type="text/bright">
-/* 排序 */
-var i, j
-i = 0
-for i < data.length - 1 {
+/* 排序动画 */
+var i = 0, j, len = data.length
+for i < len {
   j = i + 1
-  for j < data.length {  
+  for j < len {  
     swap(i, j)    // 对比相邻的两个数并排序
     sleep 10      // 暂停10毫秒
     j++
