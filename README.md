@@ -3,6 +3,8 @@ Bright.js
 
 一种更优雅的JavaScript异步流程控制方式。
 
+动画排序演示：http://bright.ucdok.com/simple/sort.html
+
 
 ## 安装
 
@@ -77,6 +79,8 @@ console.log('end')
 </script>
 ```
 
+参考文件 __build/test/test_jit.html__
+
 ### 2、预编译Bright.js代码，再在浏览器中运行
 
 新建文件 __test.bright__
@@ -99,11 +103,15 @@ bright -i test.bright -o test.js
 
 先在HTML页面中加载Bright的运行时库 __build/bright.runtime.js__，然后再载入刚才编译的文件__test.js__即可运行。
 
+参考文件 __build/test/test_runtime.html__
+
 __Bright.js__命令行工具详细使用说明：`bright --help`
 
 
 
-__语言规范__详见这里：https://github.com/leizongmin/js-bright/blob/master/doc/language-specification.md
+## 语言规范
+
+详见这里：https://github.com/leizongmin/js-bright/blob/master/doc/language-specification.md
 
 
 授权协议
