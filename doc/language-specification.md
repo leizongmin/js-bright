@@ -3,133 +3,180 @@
 
 ## 关键字
 
+__await__
 __argument__
-__var__
-__let__
-__throw__
-__function__
-__if__
-__else__
-__elseif__
-__for__
-__in__
 __break__
 __continue__
-__return__
-__await__
 __defer__
-__true__
+__else__
+__elseif__
 __false__
-__null__
-__undefined__
+__for__
+__function__
+__if__
+__in__
+__javascript__
+__let__
 __NaN__
+__null__
+__return__
+__throw__
+__true__
+__undefined__
+__var__
 
 
 ## 范例
 
-### 控制脚本
+### 声明变量 var
+
+所有变量在使用前必须先声明，否则会抛出异常。
 
 ```
-/* 程序开头部分 */
-argument x, y, z                  // 定义参数（多个参数可使用空格来分隔），也可通过遍历$arguments变量来获取所有参数
-var a, b, c                       // 定义变量（多个变量可使用空格来分隔）
+var a, b, c
+var a = 1, b = Math.random(), c
+```
 
-/* 程序主体部分 */
+### 等待异步函数返回  await
 
-// 定义延迟执行（在程序返回前执行，无论是否出错），可以为单行或多行
-defer console.log('exit')         // 执行某个函数，不能是其他语句
-defer {
-  console.log('wahaha')
-  console.log('exit')
+当调用的函数不需要参数时，可以省略后面的括号
+
+```
+// 没有返回值的函数调用
+await async_func
+await async_func()
+await async_func(1, 2, 3)
+
+// 有返回值的函数调用
+let err, data = async_func()
+``
+
+### 条件判断 if elseif else
+
+```
+// 只要if
+if true {
+  console.log('true')
 }
 
-// 赋值
-let b = await x                   // 调用异步函数，返回结果保存到变量b中
-let a, b, c = await x             // 多个返回值的异步函数（使用逗号分隔）
-let a = Math.random()             // 调用普通的函数，获取返回值
-let a = 12345 * 515               // 计算表达式，获取返回值
-
-
-// 调用异步函数
-await xxx                         // 调用函数xxx，无参数
-await xxx(1, 2, 3)                // 带参数调用函数xxx
-let a, b, c = xxx(1, 2, 3)        // 调用函数xxx，有多个返回值
-
-// 条件判断
-if x + y = z {
-  console.log('x + y = z')
-} elseif x + y < z {
-  console.log('x + y < z')
+// if ... else
+if false {
+  console.log('------')
 } else {
-  console.log('x + y > z')
+  console.log('good')
 }
 
-// 循环
-for a > 0 {
-  a++
-  if a > 10 {
-    continue      // 提前结束当次循环
-  }
-  if a > 20 {
-    break         // 跳出循环
-  }
+// 一个或多个elseif
+if 1 + 1 == 2 {
+  console.log('1 + 1 = 2')
+} elseif 2 + 2 = 2 {
+  console.log('wrong')
+} elseif 4 + 4 = 7 {
+  console.log('wrong')
+} else {
+  console.log('else')
+}
+```
+
+### 循环 for
+
+在循环体内，通过__break__来跳出循环，__continue__来提前结束本次循环
+
+```
+// 条件循环
+var i = 0
+for i < 10 {
+  console.log(i)
+  i++
 }
 
-// 无限循环
+// 无条件循环
+var i = 0
 for {
-  console.log('wahaha')
+  i++
+  if i > 100 {
+    break
+  }
 }
 
-// 遍历
-for i in x {
-  console.log(x[i])
+// 遍历数组或对象
+for i in arr {
+  console.log(arr[i])
 }
+```
 
-// 插入javascript代码
-i++
-console.log(i)
+### 定义函数 function
 
+在函数内通过__return__来返回，__return__语句可以返回多个值
+
+```
 // 定义函数
-let fn = function (arg1, arg2) {
-  return arg1 + arg2
+let fn1 = function () {
+  return 1, 2, 3
+}
+let fn2 = function (a, b) {
+  return a + b
 }
 
-// 返回值，可以有多个返回值（使用逗号分隔）
-return
-return x
-return x, y
+// 调用函数
+let err, a, b, c = fn1()
+let err, d = fn2(3, 4)
 ```
 
-### 出错处理机制
+### 推迟执行 defer
 
-异步函数格式：
+通过__defer__定义的语句可以推迟到函数返回时执行。
 
 ```
-function (arg1, arg2, callback) {
-  // 最后一个参数为回调函数
-  // 回调函数的第一个参数为出错信息，如果没有，则设置为null
-  callback(null, retValue);
+// 定义单行语句
+defer console.log('return')
+
+// 定义多行语句
+defer {
+  console.log('ahah')
+  console.log('fdfd')
 }
-```
 
-判断是否出错，并返回出错信息
-
-```
-let err, data = fs.readFile(filename, 'utf8')
-if err {
-  throw err     // 结束程序，返回该出错信息
-} else {
-  return data
-}
-```
-
-当调用异步函数出错时，整个程序将停止执行，这是可以通过注册的defer函数来处理：
-
-```
-// 在defer里面的程序中，可以通过变量error来获取返回的出错信息，如果为null，则表示没有出错
+// defer定义的语句可以通过判断error变量来检查程序返回时是否有错误
 defer {
   if error {
-    console.log(error)
+    console.log('Error: ' + error)
   }
 }
 ```
+
+### 程序暂停 sleep
+
+__sleep__可以使当前函数暂停一段时间，但不会阻塞当前进程的执行。
+
+```
+// 暂停1000毫秒
+sleep 1000
+
+// sleep后面可以是表达式
+sleep a + b
+```
+
+### 内嵌javascript代码 javascript
+
+```
+javascript {
+  var a = abc || cde || a;
+  var b = function () {
+    return arguemnts;
+  }
+}
+```
+
+### 返回值 return throw
+
+__return__语句可以返回多个值。如果程序执行时出错，可以通过__throw__语句来返回出错信息
+
+```
+if ok {
+  return a, b, c
+} else {
+  throw "not ok"
+}
+```
+

@@ -1,39 +1,109 @@
-Bright
+Bright.js
 ==========
 
-简单的脚本语言，编译成JavaScript来运行
+一种更优雅的JavaScript异步流程控制方式。
 
 
-安装
+## 安装
 
 ```bash
 npm install bright
 ```
 
-新建文件：test.bright
+## 在命令行下使用
+
+新建文件 __test.bright__
 
 ```
-argument n
-var i
-let i = 0
-for i < n {
-  await 1000
+var i = 10
+for i >= 0 {
   console.log(i)
-  i++
+  sleep 500
+  i--
 }
-return i
+console.log('end')
 ```
 
-在Node.js运行
+在命令行下执行以下命令
 
 ```bash
-node
-require('bright')
-test = require('./test')
-test(1000, console.log)
+bright test.bright
 ```
 
-在浏览器中运行 参考文件 build/test.html
+## 在Node.js程序中使用
+
+新建文件 __test_module.bright__
+
+```
+// 模块输出test函数，该函数接收一个参数
+let exports.test = function (a) {
+  sleep a
+  return a
+}
+```
+
+新建文件 test.js
+
+```javascript
+// 先载入bright模块，以使用bright的JIT编译器
+var bright = require('bright');
+// 载入刚才的bright程序
+var test_module = require('./test_module');
+
+test_module.test(1000, function (err, ret) {
+  // 所有bright里面的函数的最后一个参数为回调函数
+  // 回调函数的第一个参数是出错信息，可以在程序中通过throw来返回
+  // 第二个参数起为通过return返回的多个值
+  if (err) console.log(err && err.stack);
+  console.log(ret);
+});
+```
+
+## 在浏览器中使用
+
+### 1、浏览器环境的JIT编译器
+
+先在HTML页面中加载文件 __build/bright.js__ ，然后在`<script type="text/bright"></script>`标签内输入bright代码即可。
+
+```
+<script type="text/bright">
+var i = 10
+for i >= 0 {
+  console.log(i)
+  sleep 500
+  i--
+}
+console.log('end')
+</script>
+```
+
+### 2、预编译Bright.js代码，再在浏览器中运行
+
+新建文件 __test.bright__
+
+```
+var i = 10
+for i >= 0 {
+  console.log(i)
+  sleep 500
+  i--
+}
+console.log('end')
+```
+
+使用Bright.js命令行工具来编译程序
+
+```bash
+bright -i test.bright -o test.js
+```
+
+先在HTML页面中加载Bright的运行时库 __build/bright.runtime.js__，然后再载入刚才编译的文件__test.js__即可运行。
+
+__Bright.js__命令行工具详细使用说明：`bright --help`
+
+
+
+__语言规范__详见这里：https://github.com/leizongmin/js-bright/blob/master/doc/language-specification.md
 
 
 授权协议
