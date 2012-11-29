@@ -142,6 +142,7 @@ describe('compiler/token', function () {
                                                                  {type: TOKEN.SYMBLE, line: 0, column: 14, text: ')'},
                                                                  {type: TOKEN.BLANK, line: 0, column: 15, text: ' '},
                                                                  {type: TOKEN.SYMBLE, line: 0, column: 16, text: '{'},
+                                                                 {type: TOKEN.BLANK, line: 1, column: 0, text: '\t'},
                                                                  {type: TOKEN.NAME, line: 1, column: 1, text: 'ok'},
                                                                  {type: TOKEN.SYMBLE, line: 1, column: 3, text: '('},
                                                                  {type: TOKEN.SYMBLE, line: 1, column: 4, text: ')'},
@@ -150,6 +151,7 @@ describe('compiler/token', function () {
                                                                  {type: TOKEN.NAME, line: 2, column: 2, text: 'else'},
                                                                  {type: TOKEN.BLANK, line: 2, column: 6, text: ' '},
                                                                  {type: TOKEN.SYMBLE, line: 2, column: 7, text: '{'},
+                                                                 {type: TOKEN.BLANK, line: 3, column: 0, text: '\t'},
                                                                  {type: TOKEN.NAME, line: 3, column: 1, text: 'exit'},
                                                                  {type: TOKEN.SYMBLE, line: 4, column: 0, text: '}'},]);
       testEql('call(/* abc */ ok) // not ok\n/*\nhaha\n*/www', [{type: TOKEN.NAME, line: 0, column: 0, text: 'call'},
