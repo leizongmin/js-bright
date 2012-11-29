@@ -8,6 +8,14 @@ Bright.js
 
 ## 安装
 
+### 安装Bright.js命令行工具
+
+```bash
+npm install -g bright
+```
+
+### 安装Bright.js模块
+
 ```bash
 npm install bright
 ```
