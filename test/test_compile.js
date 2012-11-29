@@ -492,4 +492,23 @@ describe('compile', function () {
     });
   });
 
+  describe('javascript', function () {
+    it('内嵌JavaScript代码 #1', function (done) {
+      var fn = compile('var a\njavascript {\na = 123 + (true ? 4 : 5);\n  return $$_callback(null, a);\n}');
+      fn(function (err, ret) {
+        should.equal(err, null);
+        ret.should.equal(127);
+        done();
+      });
+    });
+    it('内嵌JavaScript代码 #2', function (done) {
+      var fn = compile('var i = 0\nfor i < 10 {\njavascript {\ni++;\n}\n}\nreturn i');
+      fn(function (err, ret) {
+        should.equal(err, null);
+        ret.should.equal(10);
+        done();
+      });
+    });
+  });
+
 });
