@@ -27,7 +27,9 @@ fs.writeFileSync('./build/bright.min.js', result.code);
 // 运行时库
 console.log('create file: ./build/bright.runtime.js');
 var rtContent = fs.readFileSync('./lib/runtime/core.js', 'utf8');
+var browserSupport = fs.readFileSync('./lib/browser_support.js', 'utf8');
 rtContent = '(function () {\n' +
+            browserSupport + '\n' +
             '  if (typeof(window.Bright) === "undefined") {\n' +
             '    window.Bright = {};\n' +
             '  }\n' +
