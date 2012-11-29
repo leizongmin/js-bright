@@ -15,7 +15,7 @@ if (typeof(window) === "undefined") {
   } else {
     $arguments = $$_runtime.parseArguments(arguments);
     $$_callback = $arguments.callback;
-    $arguments = $arguments.arguments
+    $arguments = $arguments.arguments;
   }
   var $$_callback_global = $$_callback;
   /* function header end */

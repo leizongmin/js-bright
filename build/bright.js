@@ -801,27 +801,28 @@ exports.TOKEN = {
 
 // 关键字列表
 exports.KEYWORD = [
+  'await',
   'argument',
-  'var',
-  'let',
-  'throw',
-  'function',
-  'if',
-  'else',
-  'elseif',
-  'for',
-  'in',
   'break',
   'continue',
-  'return',
-  'await',
-  'sleep',
   'defer',
-  'true',
+  'else',
+  'elseif',
   'false',
+  'for',
+  'function',
+  'if',
+  'in',
+  'javascript',
+  'let',
+  'NaN',
   'null',
+  'return',
+  'sleep',
+  'throw',
+  'true',
   'undefined',
-  'NaN'
+  'var'
 ];
 
 });
@@ -852,11 +853,11 @@ var TOKEN = define.TOKEN;
 var showErrorLine = function (lines, i, col, err) {
   // 预计控制台窗口宽度为80字符，当单行语句超过50个字符时，自动截断前面的
   var MAXCOL = 50;
-  console.log('\x1B[33m');
-  console.log('\n');
-  console.log(err);
-  console.log('Line: ' + (i + 1) + ', Column: ' + (col + 1));
-  console.log('');
+  console.error('\x1B[33m');
+  console.error('\n');
+  console.error(err);
+  console.error('Line: ' + (i + 1) + ', Column: ' + (col + 1));
+  console.error('');
   var line = lines[i];
   if (line) {
     if (col > MAXCOL) {
@@ -864,7 +865,7 @@ var showErrorLine = function (lines, i, col, err) {
       line = line.substr(m);
       col -= m;
     }
-    console.log(line);
+    console.error(line);
     var line2 = '';
     for (var i = 0; i < col; i++) {
       if (line.charCodeAt(i) <= 32) {
@@ -873,9 +874,9 @@ var showErrorLine = function (lines, i, col, err) {
         line2 += ' ';
       }
     }
-    console.log(line2 + '^');
+    console.error(line2 + '^');
   }
-  console.log('\x1B[39;49m');
+  console.error('\x1B[39;49m');
   return line + '\n' + line2;
 };
 
@@ -923,7 +924,6 @@ exports.parse = function (source) {
     }
   }
 };
-
 
 });
 
@@ -1054,7 +1054,7 @@ exports._parse = function (source) {
   var lastPos = 0;                  // 当前单词的开始位置（上一个单词结束位置）
   var lineNum = 0;                  // 当前行号
   var linePos = 0;                  // 当前行的位置
-  var curWord = {line: 0, column: 0}; // 当前单词开始的位置
+  var curToken = {line: 0, column: 0}; // 当前单词开始的位置
   var curStatus = STATUS.BLANK;     // 当前单词的状态（判断单词类型）
   var tokenList = [];                   // 已分析的单词数组（按顺序）
 
@@ -1091,7 +1091,7 @@ exports._parse = function (source) {
   // 设置当前状态
   var setStatus = function (s) {
     curStatus = s;
-    curWord = {
+    curToken = {
       line:    lineNum,
       column:  linePos - 1
     };
@@ -1101,17 +1101,20 @@ exports._parse = function (source) {
   var pushToken = function (t) {
     if (lastPos < curPos) {
       var w = source.slice(lastPos, curPos);
-      w = w.trim();
       var token = {
         type:   t,
-        line:   curWord.line,
-        column: curWord.column,
-        text:   w
+        line:   curToken.line,
+        column: curToken.column,
+        text:   w.trim()
       };
       if (t === TOKEN.BLANK) {
-        // 过滤掉行首的空白字符 
-        if (token.column > 0) {
-          token.text = ' ';
+        // colum=-1，以\r或\n开头的情况
+        w = w.replace(/\r|\n/img, '');
+        if (token.column < 0) {
+          token.column = 0;
+        }
+        if (w.length > 0) {
+          token.text = w;
           tokenList.push(token);
         }
       } else {
@@ -1485,7 +1488,7 @@ var syntax = module.exports;
  *   - {Array} line 当前行
  *   - {Array} next 剩下部分
  */
-syntax.readLine = function (tokenList) {
+var readLine = function (tokenList) {
   if (tokenList[0]) {
     var lineNum = tokenList[0].line;
     for (var i = 1, len = tokenList.length; i < len; i++) {
@@ -1508,7 +1511,7 @@ syntax.readLine = function (tokenList) {
  * @param {Object} t
  * @param {String} e
  */
-syntax.throwWordError = function (t, e) {
+var throwError = function (t, e) {
   if (!e) {
     e = 'Unexpected token ' + t.text;
   }
@@ -1526,9 +1529,9 @@ syntax.throwWordError = function (t, e) {
  * @param {Object} context
  * @param {String} line
  */
-syntax.codePushLine = function (context, line) {
+var pushCodeLine = function (context, line) {
   // 生成缩进空格
-  var spaces = syntax.getIndentSpace(context);
+  var spaces = getIndentSpace(context);
   context.code.push(spaces + line);
 };
 
@@ -1537,7 +1540,7 @@ syntax.codePushLine = function (context, line) {
  *
  * @param {Object} context
  */
-syntax.getIndentSpace = function (context) {
+var getIndentSpace = function (context) {
   var spaces = '';
   for (var i = 0; i < context.indent; i++) {
     spaces += '  ';
@@ -1551,7 +1554,7 @@ syntax.getIndentSpace = function (context) {
  * @param {Object} context
  * @return {Object}
  */
-syntax.newContext = function (context) {
+var createNewContext = function (context) {
   var ret = {};
   for (var i in context) {
     ret[i] = context[i];
@@ -1562,21 +1565,29 @@ syntax.newContext = function (context) {
 };
 
 /**
+ * 返回一个token对象
+ *
+ * @param {Integer} type
+ * @param {Integer} line
+ * @param {Integer} column
+ * @param {String} text
+ * @return {Object}
+ */
+var createNewToken = function (type, line, column, text) {
+  return {type: type, line: line, column: column, text: text};
+};
+
+/**
  * 在末尾增加return语句
  *
  * @param {Array} tokenList
  * @param {Boolean} isNested
  * @return {Array}
  */
-syntax.addReturnAtEnd = function (tokenList, isNested) {
+var addReturnTokenToEnd = function (tokenList, isNested) {
   var lastT = tokenList[tokenList.length - 1];
   if (lastT) {
-    var tReturn = {
-      type:   TOKEN.KEYWORD,
-      line:   lastT.line + 1,
-      column: 0,
-      text:   'return'
-    };
+    var tReturn = createNewToken(TOKEN.KEYWORD, lastT.line + 1, 0, 'return');
     if (isNested) {
       tReturn.isNested = isNested;
     }
@@ -1591,10 +1602,10 @@ syntax.addReturnAtEnd = function (tokenList, isNested) {
  * @param {Array} tokenList
  * @return {String}
  */
-syntax.parseCondition = function (tokenList) {
+var parseCondition = function (tokenList) {
   var lastT = tokenList[tokenList.length - 1];
   if (!(lastT.type === TOKEN.SYMBLE && lastT.text === '{')) {
-    return syntax.throwWordError(lastT);
+    return throwError(lastT);
   }
   // 取出条件部分
   tokenList.pop();
@@ -1621,7 +1632,7 @@ syntax.parseCondition = function (tokenList) {
  *   - {Array} names 标识符数组
  *   - {Array} next 剩下的单词
  */
-syntax.parseMultiArgument = function (tokenList) {
+var parseMultiArgument = function (tokenList) {
   var names = [];
   var lastPos = 0;
   // 增加一个名称
@@ -1638,13 +1649,13 @@ syntax.parseMultiArgument = function (tokenList) {
           } else if (t.text === ']' || t.text === ')') {
             var b = brackets.pop();
             if (!((t.text === ']' && b === '[') || (t.text === ')' && b === '('))) {
-              return syntax.throwWordError(t, 'brackets do not match');
+              return throwError(t, 'brackets do not match');
             }
           }
         }
       });
       if (brackets.length > 0) {
-        return syntax.throwWordError(t, 'brackets do not match');
+        return throwError(t, 'brackets do not match');
       }
       names.push(text);
       lastPos = i + 1;
@@ -1675,7 +1686,7 @@ syntax.parseMultiArgument = function (tokenList) {
  *    - {Array} args
  *    - {Array} init
  */
-syntax.getMultiArgumentsCode = function (names) {
+var getMultiArgumentsCode = function (names) {
   var args = [];
   var init = [];
   names.forEach(function (n, i) {
@@ -1692,7 +1703,7 @@ syntax.getMultiArgumentsCode = function (names) {
  * @param {Array} tokenList
  * @return {Array}
  */
-syntax.parseMultiValue = function (tokenList) {
+var parseMultiValue = function (tokenList) {
   var names = [];
   var lastPos = 0;
   // 增加一个名称
@@ -1709,13 +1720,13 @@ syntax.parseMultiValue = function (tokenList) {
           } else if (t.text === ']' || t.text === ')') {
             var b = brackets.pop();
             if (!((t.text === ']' && b === '[') || (t.text === ')' && b === '('))) {
-              return syntax.throwWordError(t, 'brackets do not match');
+              return throwError(t, 'brackets do not match');
             }
           }
         }
       });
       if (brackets.length > 0) {
-        return syntax.throwWordError(t, 'brackets do not match');
+        return throwError(t, 'brackets do not match');
       }
       names.push(text);
       lastPos = i + 1;
@@ -1739,7 +1750,7 @@ syntax.parseMultiValue = function (tokenList) {
  * @param {Array} tokenList
  * @return {Array}
  */
-syntax.noBlankToken = function (tokenList) {
+var removeBlankToken = function (tokenList) {
   var ret = [];
   tokenList.forEach(function (t) {
     if (t.type !== TOKEN.BLANK) {
@@ -1786,7 +1797,7 @@ syntax.wrap = function (context) {
   }
 
   // 生成最终代码并返回
-  var indent = syntax.getIndentSpace(context).substr(4);
+  var indent = getIndentSpace(context).substr(4);
   var code = '(function (' + context.args.join(', ') + ') {\n' +
     indent + '  "use strict";\n\n' +
     indent + '  /* function header start */\n' +
@@ -1796,7 +1807,7 @@ syntax.wrap = function (context) {
     indent + '  } else {\n' +
     indent + '    $arguments = $$_runtime.parseArguments(arguments);\n' +
     indent + '    $$_callback = $arguments.callback;\n' +
-    indent + '    $arguments = $arguments.arguments\n' +
+    indent + '    $arguments = $arguments.arguments;\n' +
     indent + '  }\n' +
     indent + '  var $$_callback_global = $$_callback;\n' +
     indent + '  /* function header end */\n\n' +
@@ -1836,16 +1847,16 @@ syntax.parse = function (tokenList, isNested) {
 
   // 自动在末尾增加return语句
   if (!isNested) {
-    context.tokenList = syntax.addReturnAtEnd(context.tokenList);
+    context.tokenList = addReturnTokenToEnd(context.tokenList);
   }
 
   // 添加行号标记
   var addLineNumber = function (t, msg) {
-    syntax.codePushLine(context, '/* LINE:' + (t.line + 1) + ' ' + msg + ' */');
+    pushCodeLine(context, '/* LINE:' + (t.line + 1) + ' ' + msg + ' */');
   };
 
-  for (var ret; ret = syntax.readLine(context.tokenList);) {
-    var line = ret.line;
+  for (var ret; ret = readLine(context.tokenList);) {
+    var line = removeBlankToken(ret.line);
     context.tokenList = ret.next
     var firstT = line[0];
     var nextTs = line.slice(1);
@@ -1855,100 +1866,106 @@ syntax.parse = function (tokenList, isNested) {
     } else if (firstT.type === TOKEN.KEYWORD) {
       var needNextToken = function () {
         if (nextTs.length < 1) {
-          return syntax.throwWordError(firstT, 'Unexpected end of input');
+          return throwError(firstT, 'Unexpected end of input');
         }
       };
-      nextTs = syntax.noBlankToken(nextTs);
       switch (firstT.text) {
 
         case 'argument':
           needNextToken();
-          syntax.parseArgument(context, nextTs);
+          parseArgument(context, nextTs);
           break;
 
         case 'var':
           needNextToken();
-          syntax.parseVar(context, nextTs);
+          parseVar(context, nextTs);
           break;
 
         case 'let':
           needNextToken();
           addLineNumber(firstT, 'START');
-          syntax.parseLet(context, nextTs);
+          parseLet(context, nextTs);
           addLineNumber(firstT, 'END');
           break;
 
         case 'await':
           needNextToken();
           addLineNumber(firstT, 'START');
-          syntax.parseAwait(context, '', nextTs);
+          parseAwait(context, '', nextTs);
           addLineNumber(firstT, 'END');
           break;
 
         case 'sleep':
           needNextToken();
           addLineNumber(firstT, 'START');
-          syntax.parseSleep(context, nextTs);
+          parseSleep(context, nextTs);
           addLineNumber(firstT, 'END');
           break;
 
         case 'function':
           needNextToken();
           addLineNumber(firstT, 'START');
-          syntax.parseFunction(context, '', nextTs);
+          parseFunction(context, '', nextTs);
           addLineNumber(firstT, 'END');
           break;
 
         case 'return':
           addLineNumber(firstT, 'START');
-          syntax.parseReturn(context, nextTs, firstT.isNested);
+          parseReturn(context, nextTs, firstT.isNested);
           addLineNumber(firstT, 'END');
           break;
 
         case 'defer':
           needNextToken();
-          syntax.parseDefer(context, nextTs);
+          parseDefer(context, nextTs);
           break;
 
         case 'if':
           needNextToken();
           addLineNumber(firstT, 'START');
-          syntax.parseIf(context, nextTs);
+          parseIf(context, nextTs);
           addLineNumber(firstT, 'END');
           break;
 
         case 'for':
           needNextToken();
           addLineNumber(firstT, 'START');
-          syntax.parseFor(context, nextTs);
+          parseFor(context, nextTs);
           addLineNumber(firstT, 'END');
           break;
 
         case 'break':
           addLineNumber(firstT, 'START');
-          syntax.codePushLine(context, 'return $$_break(null);');
+          pushCodeLine(context, 'return $$_break(null);');
           addLineNumber(firstT, 'END');
           break;
 
         case 'continue':
           addLineNumber(firstT, 'START');
-          syntax.codePushLine(context, 'return $$_continue(null);');
+          pushCodeLine(context, 'return $$_continue(null);');
           addLineNumber(firstT, 'END');
           break;
 
         case 'throw':
           addLineNumber(firstT, 'START');
-          syntax.parseThrow(context, nextTs);
+          parseThrow(context, nextTs);
+          addLineNumber(firstT, 'END');
+          break;
+
+        case 'javascript':
+          needNextToken();
+          addLineNumber(firstT, 'START');
+          parseJavascript(context, nextTs);
           addLineNumber(firstT, 'END');
           break;
 
         default:
-          return syntax.throwWordError(firstT);
+          return throwError(firstT);
       }
     } else {
       addLineNumber(firstT, 'START');
       // 其他语句，直接返回原来的代码
-      syntax.parseExpression(context, '', line);
+      parseExpression(context, '', line);
       addLineNumber(firstT, 'END');
     }
   }
@@ -1960,21 +1977,24 @@ syntax.parse = function (tokenList, isNested) {
 };
 
 /**
- * 解析嵌套
+ * 取 { } 括号内的单词列表
  *
  * @param {Object} context
- * @param {Boolean} isReturn 是否在末尾增加return
+ * @return {Object}
+ *  - {Array} body
+ *  - {Array} next
  */
-syntax.parseNested = function (context, isReturn) {
+var parseBraceBody = function (context) {
   var tokenList = context.tokenList;
   var ret;
   var body = [];
   var brace = 0;
-  while (ret = syntax.readLine(tokenList)) {
+  while (ret = readLine(tokenList)) {
     tokenList = ret.next;
-    var line = syntax.noBlankToken(ret.line);
-    var firstT = line[0];
-    var lastT = line[line.length - 1];
+    var line = ret.line;
+    var _line = removeBlankToken(line);
+    var firstT = _line[0];
+    var lastT = _line[_line.length - 1];
     if (firstT.type === TOKEN.SYMBLE && firstT.text === '}') {
       brace--;
     } else if (lastT.type === TOKEN.SYMBLE && lastT.text === '{') {
@@ -1983,21 +2003,35 @@ syntax.parseNested = function (context, isReturn) {
     if (brace < 0) {
       // 如果末尾为这种情况：  } else {
       // 把 else { 接到剩余的单词前面
-      if (line.length > 1) {
-        tokenList = line.slice(1).concat(tokenList);
+      if (_line.length > 1) {
+        tokenList = _line.slice(1).concat(tokenList);
       }
       break;
     } else {
+      // 保留原来可能包含空白字符的单词
       body = body.concat(line);  
     }
   }
+  return {
+    body:   body,
+    next:   tokenList
+  };
+};
+
+/**
+ * 解析嵌套
+ *
+ * @param {Object} context
+ * @param {Boolean} isReturn 是否在末尾增加return
+ */
+var parseNested = function (context, isReturn) {
+  var ret = parseBraceBody(context);
   if (isReturn) {
-    body = syntax.addReturnAtEnd(body, true);
+    ret.body = addReturnTokenToEnd(ret.body, true);
   }
-  
-  context.tokenList = body;
+  context.tokenList = ret.body;
   syntax.parse(context, true);
-  context.tokenList = tokenList;
+  context.tokenList = ret.next;
 };
 
 /**
@@ -2008,7 +2042,7 @@ syntax.parseNested = function (context, isReturn) {
  * @param {Object} context
  * @param {Array} tokenList
  */
-syntax.parseArgument = function (context, tokenList) {
+var parseArgument = function (context, tokenList) {
   var isComma = false;
   tokenList.forEach(function (t) {
     if (t.type === TOKEN.IDENTIFIER) {
@@ -2017,7 +2051,7 @@ syntax.parseArgument = function (context, tokenList) {
     } else if (t.type === TOKEN.SYMBLE && t.text === ',' && !isComma) {
       isComma = true;
     } else {
-      syntax.throwWordError(t);
+      throwError(t);
     }
   });
 };
@@ -2031,18 +2065,13 @@ syntax.parseArgument = function (context, tokenList) {
  * @param {Object} context
  * @param {Array} tokenList
  */
-syntax.parseVar = function (context, tokenList) {
+var parseVar = function (context, tokenList) {
   var brackets = [];
   var isInit = false;
   var currName = null;
   var initTokens = [];
   var lastT = tokenList[tokenList.length - 1];
-  tokenList.push({
-    type:   TOKEN.SYMBLE,
-    text:   ',',
-    line:   lastT.line,
-    column: lastT.column + lastT.text.length
-  });
+  tokenList.push(createNewToken(TOKEN.SYMBLE, lastT.line, lastT.column + lastT.text.length, ','));
   tokenList.forEach(function (t) {
     if (isInit) {
       if (t.type === TOKEN.SYMBLE) {
@@ -2052,13 +2081,13 @@ syntax.parseVar = function (context, tokenList) {
         } else if (t.text === ')') {
           var t2 = brackets.pop();
           if (t2.text !== '(') {
-            return syntax.throwWordError(t);
+            return throwError(t);
           }
           initTokens.push(t);
         } else if (t.text === ']') {
           var t2 = brackets.pop();
           if (t2.text !== '[') {
-            return syntax.throwWordError(t);
+            return throwError(t);
           }
           initTokens.push(t);
         } else if (t.text === ',') {
@@ -2067,13 +2096,8 @@ syntax.parseVar = function (context, tokenList) {
             initTokens.push(t);
           } else {
             // 初始化结束，添加初始化语句
-            initTokens.push({
-              type:   TOKEN.SYMBLE,
-              text:   ';',
-              line:   t.line,
-              column: t.column
-            });
-            syntax.parseExpression(context, currName, initTokens);
+            initTokens.push(createNewToken(TOKEN.SYMBLE, t.line, t.column, ';'));
+            parseExpression(context, currName, initTokens);
             isInit = false;
           }
         } else {
@@ -2094,10 +2118,10 @@ syntax.parseVar = function (context, tokenList) {
         } else if (t.text === '=') {
           isInit = true;
         } else {
-          return syntax.throwWordError(t);
+          return throwError(t);
         }
       } else {
-        return syntax.throwWordError(t);
+        return throwError(t);
       }
     }
   });
@@ -2113,16 +2137,16 @@ syntax.parseVar = function (context, tokenList) {
  * @param {Object} context
  * @param {Array} tokenList
  */
-syntax.parseLet = function (context, tokenList) {
+var parseLet = function (context, tokenList) {
   if (tokenList.length < 3) {
-    return syntax.throwWordError(tokenList[tokenList.length - 1], 'Unexpected end of input');
+    return throwError(tokenList[tokenList.length - 1], 'Unexpected end of input');
   }
   
   // 分析变量名，直到遇到等于号才结束
-  var ret = syntax.parseMultiArgument(tokenList);
+  var ret = parseMultiArgument(tokenList);
   var names = ret.names;
   if (ret.next.length < 1) {
-    return syntax.throwWordError(tokenList[tokenList.length - 1], 'Unexpected end of input');
+    return throwError(tokenList[tokenList.length - 1], 'Unexpected end of input');
   } else {
     tokenList = ret.next;
   }
@@ -2130,25 +2154,25 @@ syntax.parseLet = function (context, tokenList) {
   if (tokenList[0].type === TOKEN.KEYWORD) {
     if (tokenList[0].text === 'await') {
       if (!tokenList[1]) {
-        return syntax.throwWordError(tokenList[0], 'Unexpected end of input')
+        return throwError(tokenList[0], 'Unexpected end of input')
       }
-      syntax.parseAwait(context, names, tokenList.slice(1));
+      parseAwait(context, names, tokenList.slice(1));
     } else if (tokenList[0].text === 'function') {
       if (!tokenList[1]) {
-        return syntax.throwWordError(tokenList[0], 'Unexpected end of input')
+        return throwError(tokenList[0], 'Unexpected end of input')
       }
       if (names.length > 1) {
-        return syntax.throwWordError(tokenList[0], 'Not support tuple assignment');
+        return throwError(tokenList[0], 'Not support tuple assignment');
       }
-      syntax.parseFunction(context, names[0], tokenList.slice(1));
+      parseFunction(context, names[0], tokenList.slice(1));
     } else {
-      return syntax.throwWordError(tokenList[0]);
+      return throwError(tokenList[0]);
     }
   } else {
     if (names.length > 1) {
-      return syntax.throwWordError(tokenList[0], 'Not support tuple assignment');
+      return throwError(tokenList[0], 'Not support tuple assignment');
     }
-    syntax.parseExpression(context, names[0], tokenList);
+    parseExpression(context, names[0], tokenList);
   }
 };
 
@@ -2169,7 +2193,7 @@ syntax.parseLet = function (context, tokenList) {
  * @param {String} name 保存的变量名称，可以为空
  * @param {Array} tokenList
  */
-syntax.parseExpression = function (context, name, tokenList) {
+var parseExpression = function (context, name, tokenList) {
   var code = '';
   var isName = false;
   tokenList.forEach(function (t) {
@@ -2183,7 +2207,7 @@ syntax.parseExpression = function (context, name, tokenList) {
     }
   });
   code = (name ? name + ' = ' : '') + code.trim();
-  syntax.codePushLine(context, code);
+  pushCodeLine(context, code);
 };
 
 /**
@@ -2196,14 +2220,14 @@ syntax.parseExpression = function (context, name, tokenList) {
  * @param {Array} names
  * @param {Array} tokenList
  */
-syntax.parseAwait = function (context, names, tokenList) {
+var parseAwait = function (context, names, tokenList) {
   var firstT = tokenList[0];
   if (tokenList.length === 1 && firstT.type === TOKEN.NUMBER) {
-    return syntax.throwWordError(firstT);
+    return throwError(firstT);
   } else {
     // 调用函数
     if (tokenList[0].type !== TOKEN.IDENTIFIER) {
-      return syntax.throwWordError(tokenList[0]);
+      return throwError(tokenList[0]);
     }
     var lastT = tokenList[tokenList.length - 1];
     if (lastT.type === TOKEN.SYMBLE && lastT.text === ')') {
@@ -2228,19 +2252,19 @@ syntax.parseAwait = function (context, names, tokenList) {
   }
   // 生成 function (arg1, arg2, ...) {
   if (names.length > 0) {
-    var code = syntax.getMultiArgumentsCode(names);
+    var code = getMultiArgumentsCode(names);
   }
   call += 'function (' + (names.length > 0 ? code.args.join(', ') : '') + ') {';
-  syntax.codePushLine(context, call);
+  pushCodeLine(context, call);
   context.indent++;
   if (names.length > 0) {
     code.init.forEach(function (line) {
-      syntax.codePushLine(context, line);
+      pushCodeLine(context, line);
     });
   }
   syntax.parse(context, true);
   context.indent--;
-  syntax.codePushLine(context, '});');
+  pushCodeLine(context, '});');
 };
 
 /**
@@ -2253,12 +2277,12 @@ syntax.parseAwait = function (context, names, tokenList) {
  * @param {Array} tokenList
  * @param {Boolean} isNested
  */
-syntax.parseReturn = function (context, tokenList, isNested) {
+var parseReturn = function (context, tokenList, isNested) {
   var values = ['null'];
   if (tokenList.length > 0) {
-    values = values.concat(syntax.parseMultiValue(tokenList));
+    values = values.concat(parseMultiValue(tokenList));
   }
-  syntax.codePushLine(context, 'return $$_callback' + (isNested ? '' : '_global') + '(' + values.join(', ') + ');');
+  pushCodeLine(context, 'return $$_callback' + (isNested ? '' : '_global') + '(' + values.join(', ') + ');');
 };
 
 /**
@@ -2273,7 +2297,7 @@ syntax.parseReturn = function (context, tokenList, isNested) {
  * @param {Object} context
  * @param {Array} tokenList
  */
-syntax.parseDefer = function (context, tokenList) {
+var parseDefer = function (context, tokenList) {
   var lastT = tokenList[tokenList.length - 1];
   var codeTop = 'function (error, $$_callback) {\n';
   var codeBottom = '\n    }';
@@ -2288,14 +2312,14 @@ syntax.parseDefer = function (context, tokenList) {
       context.defers.push(codeTop + call + codeBottom);
     } else if (lastT.text === '{' && tokenList.length === 1) {
       // defer {    情况
-      var newContext = syntax.newContext(context);
+      var newContext = createNewContext(context);
       newContext.indent = 3;
-      syntax.parseNested(newContext, true);
+      parseNested(newContext, true);
       var code = newContext.code.join('\n');
       context.defers.push(codeTop + code + codeBottom);
       context.tokenList = newContext.tokenList;
     } else {
-      return syntax.throwWordError(lastT);
+      return throwError(lastT);
     }
   } else if (lastT.type === TOKEN.IDENTIFIER) {
     // defer xxx 情况
@@ -2306,7 +2330,7 @@ syntax.parseDefer = function (context, tokenList) {
     call = '      ' + call + '();\n      return $$_callback(null);';
     context.defers.push(codeTop + call + codeBottom);
   } else {
-    return syntax.throwWordError(lastT);
+    return throwError(lastT);
   }
 };
 
@@ -2320,34 +2344,34 @@ syntax.parseDefer = function (context, tokenList) {
  * @param {Object} context
  * @param {Array} tokenList
  */
-syntax.parseIf = function (context, tokenList) {
+var parseIf = function (context, tokenList) {
   // runtime.ifCondition()的参数
   var conditions = [];
   
   // 解析执行主体部分
   // TODO: 应该增加 return $$_callback(null) 到末尾
   var parseBody = function () {
-    var newContext = syntax.newContext(context);
+    var newContext = createNewContext(context);
     newContext.indent++;
-    syntax.parseNested(newContext, true);
+    parseNested(newContext, true);
     context.tokenList = newContext.tokenList;
     var code = newContext.code.join('\n');
     code = 'function ($$_callback) {\n' +
            code + '\n' +
-           syntax.getIndentSpace(context) + '}';
+           getIndentSpace(context) + '}';
     return code;
   }
 
   // 取出当前行的条件部分
   // 如 if xx {  或者 elseif xx {
-  conditions.push(syntax.parseCondition(tokenList));
+  conditions.push(parseCondition(tokenList));
   conditions.push(parseBody());
 
   // 如果下一行是 elseif 或 else ，则继续解析
   var nextW = context.tokenList[0];
   if (nextW && nextW.type === TOKEN.KEYWORD && 
      (nextW.text === 'else' || nextW.text === 'elseif')) {
-    for (var ret; ret = syntax.readLine(context.tokenList);) {
+    for (var ret; ret = readLine(context.tokenList);) {
       var line = ret.line;
       context.tokenList = ret.next
       var firstT = line[0];
@@ -2355,17 +2379,15 @@ syntax.parseIf = function (context, tokenList) {
 
       if (firstT.type === TOKEN.KEYWORD) {
         if (firstT.text === 'elseif') {
-          conditions.push(syntax.parseCondition(nextTs));
+          conditions.push(parseCondition(nextTs));
           conditions.push(parseBody());
         } else if (firstT.text === 'else') {
           conditions.push(parseBody());
         } else {
-          //return syntax.throwWordError(firstT);
           context.tokenList = line.concat(context.tokenList);
           break;
         }
       } else {
-        //return syntax.throwWordError(firstT);
         context.tokenList = line.concat(context.tokenList);
         break;
       }
@@ -2373,16 +2395,16 @@ syntax.parseIf = function (context, tokenList) {
   }
  
   // 解析后面的代码
-  var newContext = syntax.newContext(context);
+  var newContext = createNewContext(context);
   newContext.indent++;
-  syntax.parseNested(newContext);
+  parseNested(newContext);
   context.tokenList = newContext.tokenList;
   var nextCode = newContext.code.join('\n');
 
   var code = '$$_runtime.ifCondition(' + conditions.join(', ') + ', function () {\n' +
              nextCode + '\n' +
-             syntax.getIndentSpace(context) + '});';
-  syntax.codePushLine(context, code);
+             getIndentSpace(context) + '});';
+  pushCodeLine(context, code);
 };
 
 /**
@@ -2401,12 +2423,12 @@ syntax.parseIf = function (context, tokenList) {
  * @param {Object} context
  * @param {Array} tokenList
  */
-syntax.parseFor = function (context, tokenList) {
+var parseFor = function (context, tokenList) {
   // 解析后面的代码
   var parseNext = function () {
-    var newContext = syntax.newContext(context);
+    var newContext = createNewContext(context);
     newContext.indent++;
-    syntax.parseNested(newContext);
+    parseNested(newContext);
     context.tokenList = newContext.tokenList;
     var nextCode = newContext.code.join('\n');
     return nextCode;
@@ -2415,7 +2437,7 @@ syntax.parseFor = function (context, tokenList) {
   if (tokenList.length >= 3 && tokenList[1].type === TOKEN.KEYWORD && tokenList[1].text === 'in') {
     // 遍历
     if (tokenList[0].type !== TOKEN.IDENTIFIER) {
-      return syntax.throwWordError(tokenList[0]);
+      return throwError(tokenList[0]);
     }
     var keyName = tokenList[0].text;
     var objName = '';
@@ -2423,34 +2445,34 @@ syntax.parseFor = function (context, tokenList) {
       objName += t.text;
     });
     // 解析循环体
-    var newContext = syntax.newContext(context);
+    var newContext = createNewContext(context);
     newContext.indent++;
-    syntax.parseNested(newContext, true);
+    parseNested(newContext, true);
     context.tokenList = newContext.tokenList;
     var bodyCode = newContext.code.join('\n');
-    var indent = syntax.getIndentSpace(context);
+    var indent = getIndentSpace(context);
     var code = '$$_runtime.forEachLoop(' + objName + ', function (' + keyName + ', $$_continue, $$_break) {\n' +
                 indent + '  var $$_callback = $$_continue;\n' +
                 bodyCode + '\n' +
                 indent + '}, function () {\n' +
                 parseNext() + '\n' +
                 indent + '});';
-    syntax.codePushLine(context, code);
+    pushCodeLine(context, code);
   } else {
     if (tokenList.length === 1 && tokenList[0].type === TOKEN.SYMBLE && tokenList[0].text === '{') {
       // 无条件循环
       var condition = 'true';
     } else {
       // 条件循环
-      var condition = syntax.parseCondition(tokenList);
+      var condition = parseCondition(tokenList);
     }
     // 解析循环体
-    var newContext = syntax.newContext(context);
+    var newContext = createNewContext(context);
     newContext.indent++;
-    syntax.parseNested(newContext, true);
+    parseNested(newContext, true);
     context.tokenList = newContext.tokenList;
     var bodyCode = newContext.code.join('\n');
-    var indent = syntax.getIndentSpace(context);
+    var indent = getIndentSpace(context);
     var code = '$$_runtime.conditionLoop(function () {\n' +
                 indent + '  return ' + condition + ';\n' +
                 indent + '}, function ($$_continue, $$_break) {\n' +
@@ -2459,7 +2481,7 @@ syntax.parseFor = function (context, tokenList) {
                 indent + '}, function () {\n' +
                 parseNext() + '\n' +
                 indent + '});';
-    syntax.codePushLine(context, code);
+    pushCodeLine(context, code);
   }
 };
 
@@ -2471,12 +2493,12 @@ syntax.parseFor = function (context, tokenList) {
  * @param {Object} context
  * @param {Array} tokenList
  */
-syntax.parseThrow = function (context, tokenList) {
+var parseThrow = function (context, tokenList) {
   if (tokenList.length < 1) {
-    syntax.codePushLine(context, 'return $$_callback_global(new Error());');
+    pushCodeLine(context, 'return $$_callback_global(new Error());');
   } else {
-    syntax.parseExpression(context, 'var $$_err', tokenList);
-    syntax.codePushLine(context, 'return $$_callback_global($$_err);');
+    parseExpression(context, 'var $$_err', tokenList);
+    pushCodeLine(context, 'return $$_callback_global($$_err);');
   }
 };
 
@@ -2490,10 +2512,10 @@ syntax.parseThrow = function (context, tokenList) {
  * @param {String} name 保存的变量名称，可以为空
  * @param {Array} tokenList
  */
-syntax.parseFunction = function (context, name, tokenList) {
+var parseFunction = function (context, name, tokenList) {
   var lastT = tokenList[tokenList.length - 1];
   if (!(lastT.type === TOKEN.SYMBLE && lastT.text === '{')) {
-    return syntax.throwWordError(lastT);
+    return throwError(lastT);
   }
 
   // 解析参数 function
@@ -2505,10 +2527,10 @@ syntax.parseFunction = function (context, name, tokenList) {
     var firstT = argTokens[0];
     var lastT = argTokens[argTokens.length - 1];
     if (!(firstT.type === TOKEN.SYMBLE && firstT.text === '(')) {
-      return syntax.throwWordError(firstT);
+      return throwError(firstT);
     }
     if (!(lastT.type === TOKEN.SYMBLE && lastT.text === ')')) {
-      return syntax.throwWordError(firstT);
+      return throwError(firstT);
     }
     var isComma = true;
     argTokens.slice(1, argTokens.length - 1).forEach(function (t) {
@@ -2518,24 +2540,25 @@ syntax.parseFunction = function (context, name, tokenList) {
       } else if (!isComma && t.type === TOKEN.SYMBLE && t.text === ',') {
         isComma = true;
       } else {
-        return syntax.throwWordError(t);
+        return throwError(t);
       }
     });
   }
 
   // 解析函数体
-  var newContext = syntax.newContext(context);
+  var newContext = createNewContext(context);
   newContext.vars = [];
   newContext.indent += 2;
-  syntax.parseNested(newContext, true);
+  parseNested(newContext, true);
   
   // 封装函数
   newContext.args = argNames;
+  newContext.args.push('$$_callback');
   var body = syntax.wrap(newContext);
-  syntax.codePushLine(context, '');
+  pushCodeLine(context, '');
   var code = (name ? name + ' = ' : '') + body + ';';
-  syntax.codePushLine(context, code);
-  syntax.codePushLine(context, '');
+  pushCodeLine(context, code);
+  pushCodeLine(context, '');
   context.tokenList = newContext.tokenList;  
 };
 
@@ -2547,21 +2570,52 @@ syntax.parseFunction = function (context, name, tokenList) {
  * @param {Object} context
  * @param {Array} tokenList
  */
-syntax.parseSleep = function (context, tokenList) {
+var parseSleep = function (context, tokenList) {
   var lastT = tokenList[tokenList.length - 1];
-  tokenList.push({
-    type:   TOKEN.SYMBLE,
-    text:   ';',
-    line:   lastT.line,
-    column: lastT.column + lastT.text.length + 1
-  });
-  syntax.parseExpression(context, 'var $$_sleep_ms', tokenList);
+  tokenList.push(createNewToken(TOKEN.SYMBLE, lastT.line, lastT.column + lastT.text.length + 1, ';'));
+  parseExpression(context, 'var $$_sleep_ms', tokenList);
   var code = '$$_runtime.sleep($$_sleep_ms, function ($$_err) {';
-  syntax.codePushLine(context, code);
+  pushCodeLine(context, code);
   context.indent++;
   syntax.parse(context, true);
   context.indent--;
-  syntax.codePushLine(context, '});');
+  pushCodeLine(context, '});');
+};
+
+/**
+ * 解析javascript语句
+ * 格式为： javascript {
+ * 输入的单词中，已经去掉了javascript
+ *
+ * @param {Object} context
+ * @param {Array} tokenList
+ */
+var parseJavascript = function (context, tokenList) {
+  var firstT = tokenList[0];
+  if (!(tokenList.length === 1 && firstT.type === TOKEN.SYMBLE && firstT.text === '{')) {
+    return throwError(firstT);
+  }
+  var ret = parseBraceBody(context);
+  var tokenList = ret.body;
+  var line;
+  while (line = readLine(tokenList)) {
+    tokenList = line.next;
+    var isName = false;
+    var code = '';
+    line.line.forEach(function (t) {
+      if (t.type === TOKEN.IDENTIFIER || t.type === TOKEN.KEYWORD) {
+        // 相邻的关键字或标识符必须用空格隔开
+        code += (isName ? ' ' : '') + t.text;
+        isName = true;
+      } else {
+        code += t.text;
+        isName = false;
+      }
+    });
+    pushCodeLine(context, code);
+  }
+
+  context.tokenList = ret.next;
 };
 
 });
