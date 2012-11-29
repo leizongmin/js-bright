@@ -35,6 +35,9 @@ body {
 .active {
   background-color: yellow;
 }
+.red {
+  background-color: red;
+}
 </style>
 </head>
 <body>
@@ -42,23 +45,22 @@ body {
   <div id="code">
     <pre><code>
 /* 排序动画 */
-var i = 0, j, len = data.length
-for i < len {
-  j = i + 1
-  for j < len {  
-    swap(i, j)    // 对比相邻的两个数并排序
-    sleep 10      // 暂停10毫秒
-    j++
+let quickSort = function (left, right) {
+  var pivotpos, err
+  if left < right {
+    let err, pivotpos = await partition(left, right)
+    await quickSort(left, pivotpos - 1)
+    await quickSort(pivotpos + 1, right)
   }
-  i++
+  console.log(left, right);
 }
-alert('OK')
+await quickSort(0, data.length - 1)
     </code></pre>
   </div>
 </body>
 </html>
 <script src="http://code.jquery.com/jquery-1.8.3.min.js"></script>
-<script src="http://raw.github.com/leizongmin/js-bright/master/build/bright.min.js"></script>
+<script src="../bright.min.js"></script>
 <script>
 /* 此代码用于绘制图像 */
 var COUNT = 100;
@@ -73,7 +75,7 @@ var randomArray = function (length) {
   });
   return array;
 };
-var data = randomArray(COUNT);
+var data = randomArray(COUNT + 1);
 var $box = $('#box');
 var setHeight = function (i) {
   var d = data[i];
@@ -92,33 +94,61 @@ data.forEach(function (d, i) {
   setHeight(i);
 });
 
+/* 交换两个数 */
 var $line = $('.line');
 var swap = function (a, b) {
-  $line.removeClass('active');
+  var tmp = data[a];
+  data[a] = data[b];
+  data[b] = tmp;
+  setHeight(a);
+  setHeight(b);
+}
+/* 激活指定数 */
+var active = function (a, b, c) {
+  $line.removeClass('active').removeClass('red');
   $('#line-' + a).addClass('active');
   $('#line-' + b).addClass('active');
-  if (data[a] > data[b]) {
-    var d = data[a];
-    data[a] = data[b];
-    data[b] = d;
-    setHeight(a);
-    setHeight(b);
-  }
-  console.log(data.join(', '));
-  return data[a] < data[b] ? data[a] : data[b];
+  $('#line-' + c).addClass('red');
 }
+/* 产生随机数 */
+var rand = function () {
+  return parseInt(Math.random() * COUNT * 10);
+};
 </script>
 <script type="text/bright">
 /* 排序动画 */
-var i = 0, j, len = data.length
-for i < len {
-  j = i + 1
-  for j < len {  
-    swap(i, j)    // 对比相邻的两个数并排序
-    sleep 10      // 暂停10毫秒
+var quickSort, partition
+/* 对数据区间[left..right]进行划分 */
+let partition = function (left, right) {
+  var rnd = rand() % (right - left + 1) + left
+  swap(rnd, right)
+  var pvt = right
+  var i = left - 1
+  var j = i + 1
+  for j < right {
+    active(i, j, pvt);
+    sleep 50
+    if data[j] < data[pvt] {
+      swap(j, ++i)
+    }
     j++
   }
-  i++
+  swap(++i, pvt)
+  return i
 }
-alert('OK')
+/* 对数据区间[left..right]进行排序 */
+let quickSort = function (left, right) {
+  var pivotpos, err
+  if left < right {
+    let err, pivotpos = await partition(left, right)
+    await quickSort(left, pivotpos - 1)
+    await quickSort(pivotpos + 1, right)
+  }
+  console.log(left, right);
+}
+await quickSort(0, data.length - 1)
+console.log(data);
+
+$line.removeClass('active').removeClass('red');
+alert('OK');
 </script>
