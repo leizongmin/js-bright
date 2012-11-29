@@ -20,6 +20,7 @@ __let__
 __NaN__
 __null__
 __return__
+__sleep__
 __throw__
 __true__
 __undefined__
