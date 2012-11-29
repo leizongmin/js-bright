@@ -491,7 +491,7 @@ describe('compile', function () {
       });
     });
   });
-
+  
   describe('javascript', function () {
     it('内嵌JavaScript代码 #1', function (done) {
       var fn = compile('var a\njavascript {\na = 123 + (true ? 4 : 5);\n  return $$_callback(null, a);\n}');

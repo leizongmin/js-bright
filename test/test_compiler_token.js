@@ -115,7 +115,7 @@ describe('compiler/token', function () {
                             {type: TOKEN.SYMBLE, line: 0, column: 6, text: '='},
                             {type: TOKEN.NUMBER, line: 0, column: 7, text: '10'},]);
       testEql('"abc"  +50="abc50"', [{type: TOKEN.STRING, line: 0, column: 0, text: '"abc"'},
-                                       {type: TOKEN.BLANK, line: 0, column: 5, text: ' '},
+                                       {type: TOKEN.BLANK, line: 0, column: 5, text: '  '},
                                        {type: TOKEN.SYMBLE, line: 0, column: 7, text: '+'},
                                        {type: TOKEN.NUMBER, line: 0, column: 8, text: '50'},
                                        {type: TOKEN.SYMBLE, line: 0, column: 10, text: '='},
