@@ -435,12 +435,7 @@ exports.compile = function (source) {
   var $$_runtime = runtime;
   var $$_javascript = parser.parse(source);
   debug($$_javascript);
-  var fn = eval($$_javascript);
-  if (typeof(fn) !== 'function') {
-    var tmpName = '$$_ie_' + Date.now() + parseInt(Math.random() * 100000);
-    var fn = eval('var ' + tmpName + '=' + $$_javascript + ';' + tmpName);
-  }
-  return fn;
+  return eval('false || ' + $$_javascript);
 };
 
 /**
