@@ -16,8 +16,11 @@
     "type":         "git",
     "url":          "git://github.com/leizongmin/js-bright.git"
   },
+  "bugs":{
+    "url":          "https://github.com/leizongmin/js-bright/issues"
+  },
   "engines": {
-    "node":         ">= 0.8.0"
+    "node":         ">= 0.6.0"
   },
   "dependencies":	{
     "commander":    ">= 1.1.1"
