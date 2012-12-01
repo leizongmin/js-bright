@@ -7,11 +7,6 @@ var should = require('should');
 var runtime = require('../lib/runtime/core');
 
 
-var line = function () {
-  console.log('------------------------------------------------------------');
-};
-
-
 describe('runtime/core', function () {
   
   describe('ifCondition', function () {

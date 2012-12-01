@@ -8,11 +8,6 @@ var token = require('../lib/compiler/token');
 var define = require('../lib/compiler/define');
 
 
-var line = function () {
-  console.log('------------------------------------------------------------');
-};
-
-
 describe('compiler/token', function () {
 
   describe('_parse() 原始分词', function () {

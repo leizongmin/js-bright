@@ -7,11 +7,6 @@ var should = require('should');
 var compiler = require('../');
 
 
-var line = function () {
-  console.log('------------------------------------------------------------');
-};
-
-
 describe('compile', function () {
 
   var compile = function (source) {
