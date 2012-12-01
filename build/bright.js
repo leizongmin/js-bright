@@ -1853,6 +1853,12 @@ syntax.parse = function (tokenList, isNested) {
   for (var ret; ret = readLine(context.tokenList);) {
     var line = removeBlankToken(ret.line);
     context.tokenList = ret.next
+
+    // 跳过空行
+    if (line.length < 1) {
+      continue;
+    }
+
     var firstT = line[0];
     var nextTs = line.slice(1);
 
@@ -1978,22 +1984,45 @@ syntax.parse = function (tokenList, isNested) {
  * @return {Object}
  *  - {Array} body
  *  - {Array} next
+ * @param {Boolean} isIf 是否为if语句
  */
-var parseBraceBody = function (context) {
+var parseBraceBody = function (context, isIf) {
   var tokenList = context.tokenList;
   var ret;
   var body = [];
   var brace = 0;
+  var containsElseElseIf = false;
+
   while (ret = readLine(tokenList)) {
     tokenList = ret.next;
     var line = ret.line;
     var _line = removeBlankToken(line);
     var firstT = _line[0];
-    var lastT = _line[_line.length - 1];
-    if (firstT.type === TOKEN.SYMBLE && firstT.text === '}') {
-      brace--;
-    } else if (lastT.type === TOKEN.SYMBLE && lastT.text === '{') {
-      brace++;
+    if (firstT) {
+      var lastT = _line[_line.length - 1];
+      if (isIf) {
+        // if 语句中， } elseif { 情况，在 } 时结束
+        if (firstT.type === TOKEN.SYMBLE && firstT.text === '}') {
+          brace--;
+        } else if (lastT.type === TOKEN.SYMBLE && lastT.text === '{') {
+          brace++;
+        }
+      } else {
+        // 非if语句中，} elseif { 情况影响花括号计数（特殊情况）
+        var firstIsCloseBrace = false;
+        var lastIsOpenBrace = false;
+        if (firstT.type === TOKEN.SYMBLE && firstT.text === '}') {
+          brace--;
+          firstIsCloseBrace = true;
+        }
+        if (lastT.type === TOKEN.SYMBLE && lastT.text === '{') {
+          brace++;
+          lastIsOpenBrace = true;
+        }
+        if (!containsElseElseIf) {
+          containsElseElseIf = firstIsCloseBrace && lastIsOpenBrace;
+        }
+      }
     }
     if (brace < 0) {
       // 如果末尾为这种情况：  } else {
@@ -2004,9 +2033,19 @@ var parseBraceBody = function (context) {
       break;
     } else {
       // 保留原来可能包含空白字符的单词
-      body = body.concat(line);  
+      body = body.concat(line);
     }
   }
+
+  // 特殊情况，如果是 { } 内包含了 if {} elseif {} 
+  // 末尾会多了一个 }，需要去掉
+  if (containsElseElseIf) {
+    var lastT = body[body.length - 1];
+    if (lastT && lastT.type === TOKEN.SYMBLE && lastT.text === '}') {
+      body.pop();
+    }
+  }
+
   return {
     body:   body,
     next:   tokenList
@@ -2018,9 +2057,10 @@ var parseBraceBody = function (context) {
  *
  * @param {Object} context
  * @param {Boolean} isReturn 是否在末尾增加return
+ * @param {Boolean} isIf 是否为if语句
  */
-var parseNested = function (context, isReturn) {
-  var ret = parseBraceBody(context);
+var parseNested = function (context, isReturn, isIf) {
+  var ret = parseBraceBody(context, isIf);
   if (isReturn) {
     ret.body = addReturnTokenToEnd(ret.body, true);
   }
@@ -2348,7 +2388,7 @@ var parseIf = function (context, tokenList) {
   var parseBody = function () {
     var newContext = createNewContext(context);
     newContext.indent++;
-    parseNested(newContext, true);
+    parseNested(newContext, true, true);
     context.tokenList = newContext.tokenList;
     var code = newContext.code.join('\n');
     code = 'function ($$_callback) {\n' +
@@ -2363,21 +2403,28 @@ var parseIf = function (context, tokenList) {
   conditions.push(parseBody());
 
   // 如果下一行是 elseif 或 else ，则继续解析
-  var nextW = context.tokenList[0];
-  if (nextW && nextW.type === TOKEN.KEYWORD && 
-     (nextW.text === 'else' || nextW.text === 'elseif')) {
+  var nextT = context.tokenList[0];
+  if (nextT && nextT.type === TOKEN.KEYWORD && 
+     (nextT.text === 'else' || nextT.text === 'elseif')) {
+    var hasElse = false;
     for (var ret; ret = readLine(context.tokenList);) {
       var line = ret.line;
+      var _line = removeBlankToken(line);
       context.tokenList = ret.next
-      var firstT = line[0];
-      var nextTs = line.slice(1);
+      var firstT = _line[0];
+      var nextTs = _line.slice(1);
 
       if (firstT.type === TOKEN.KEYWORD) {
         if (firstT.text === 'elseif') {
           conditions.push(parseCondition(nextTs));
           conditions.push(parseBody());
         } else if (firstT.text === 'else') {
+          // 只能出现一次else
+          if (hasElse) {
+            return throwError(firstT);
+          }
           conditions.push(parseBody());
+          hasElse = true;
         } else {
           context.tokenList = line.concat(context.tokenList);
           break;
@@ -2513,7 +2560,7 @@ var parseFunction = function (context, name, tokenList) {
     return throwError(lastT);
   }
 
-  // 解析参数 function
+  // 解析参数
   var argNames = [];
   if (tokenList.length === 1) {
     // 无参数
