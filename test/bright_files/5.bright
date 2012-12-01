@@ -1,0 +1,14 @@
+argument a, b
+if a > b {
+  return 1
+} elseif a < b {
+  return -1
+} elseif false {
+  return 2
+} elseif false {
+  return 3
+} elseif false {
+  return 4
+} else {
+  return 0
+}

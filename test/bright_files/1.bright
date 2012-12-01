@@ -1,0 +1,16 @@
+var i = 0, j, k, sum = 0
+for i < 2 {
+  j = 0
+  for j < 3 {
+    k = 0
+    for k < 4 {
+      if k < 2 {
+        sum++
+      }
+      k++
+    }
+    j++
+  }
+  i++
+}
+return sum, i, j, k

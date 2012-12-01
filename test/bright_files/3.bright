@@ -1,0 +1,42 @@
+var fn1, fn2, fn3, err, ret1, ret2
+
+// 空函数
+let fn3 = function () {
+  if true {
+    
+  }
+}
+
+let fn1 = function (a, b) {
+  var fn11, fn12, ret1, ret2, err
+  let fn11 = function (a, b) {
+    return a + b
+  }
+  let fn12 = function (a, b) {
+    return a * b
+  }
+  let err, ret1 = await fn11(a, b)
+  if err {
+    throw err
+  }
+  let err, ret2 = await fn12(a, b)
+  if err {
+    throw err
+  }
+  return ret1, ret2
+}
+
+let fn2 = function () {
+  var err, ret1, ret2
+  let err, ret1, ret2 = await fn1(3, 4)
+  if err {
+    throw err
+  }
+  return ret1, ret2
+}
+
+let err, ret1, ret2 = await fn2
+if err {
+  throw err
+}
+return ret1, ret2
