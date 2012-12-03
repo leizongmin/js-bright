@@ -16,7 +16,7 @@ describe('compile 2', function () {
     var source = fs.readFileSync(filename, 'utf8');
     return compiler.compile(source);
   };
-  
+  /*
   it('#1 嵌套for / if', function (done) {
     var fn = compile('1');
     fn(function (err, sum, i, j, k) {
@@ -56,7 +56,7 @@ describe('compile 2', function () {
       done();
     })
   });
-  return;
+  
   it('#5 多个if elseif', function (done) {
     var fn = compile('5');
     fn(3, 4, function (err, ret) {
@@ -68,6 +68,17 @@ describe('compile 2', function () {
         done();
       })  
     })
+  });
+  */
+  it('#6 for in 里面的 if elseif', function (done) {
+    var fn = compile('6');
+    console.log(fn.toString());
+    fn(function (err, ret1, ret2) {
+      should.equal(err, null);
+      ret1.should.eql([2,4,6,8,10]);
+      ret2.should.eql([3,9]);
+      done();
+    });
   });
   
 });
