@@ -689,7 +689,7 @@ runtime.ifCondition = function () {
   };
   var next = function () {
     var g = groups.shift();
-    if (!g) {
+    if (!g || lastCondition) {
       // 最后一组
       done();
     } else {
@@ -1581,13 +1581,11 @@ var createNewToken = function (type, line, column, text) {
  */
 var addReturnTokenToEnd = function (tokenList, isNested) {
   var lastT = tokenList[tokenList.length - 1];
-  if (lastT) {
-    var tReturn = createNewToken(TOKEN.KEYWORD, lastT.line + 1, 0, 'return');
-    if (isNested) {
-      tReturn.isNested = isNested;
-    }
-    tokenList.push(tReturn);
+  var tReturn = createNewToken(TOKEN.KEYWORD, (lastT ? lastT.line + 1 : -1), 0, 'return');
+  if (isNested) {
+    tReturn.isNested = isNested;
   }
+  tokenList.push(tReturn);
   return tokenList;
 };
 
@@ -2439,7 +2437,7 @@ var parseIf = function (context, tokenList) {
   // 解析后面的代码
   var newContext = createNewContext(context);
   newContext.indent++;
-  parseNested(newContext);
+  parseNested(newContext, true);
   context.tokenList = newContext.tokenList;
   var nextCode = newContext.code.join('\n');
 
