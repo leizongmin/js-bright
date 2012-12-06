@@ -1,0 +1,17 @@
+argument flag, setValue
+if flag == 1 {
+  defer setValue(123)
+} elseif flag == 2 {
+  defer {
+    setValue(456)
+  }
+} else {
+  var fn
+  let fn = function () {
+    if flag == 3 {
+      defer setValue(789)
+    }
+  }
+  await fn
+}
+

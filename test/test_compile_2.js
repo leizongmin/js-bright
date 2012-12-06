@@ -95,5 +95,33 @@ describe('compile 2', function () {
       });
     });
   });
+
+  it('#8 defer在其所在位置设置', function (done) {
+    var fn = compile('8');
+    var ret = {};
+    var setValue = function (v) {
+      ret.value = v;
+    };
+    var getValue = function () {
+      return ret.value;
+    };
+    var initValue = function () {
+      delete ret.value;
+    };
+    fn(1, setValue, function (err) {
+      should.equal(err, null);
+      getValue().should.equal(123);
+      initValue();
+      fn(2, setValue, function (err) {
+        should.equal(err, null);
+        getValue().should.equal(456);
+        fn(3, setValue, function (err) {
+          should.equal(err, null);
+          getValue().should.equal(789);
+          done();
+        });
+      })
+    });
+  });
   
 });
