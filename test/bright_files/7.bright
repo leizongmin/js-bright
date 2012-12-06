@@ -1,0 +1,12 @@
+argument flag
+if flag {
+  var ret1 = 123
+} else {
+  var ret1 = 456
+}
+if !flag {
+  var ret2 = 78
+} else {
+  var ret2 = 90
+}
+return ret1, ret2

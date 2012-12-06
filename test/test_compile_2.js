@@ -80,5 +80,20 @@ describe('compile 2', function () {
       done();
     });
   });
+
+  it('#7 var中包含赋值语句时，在其所在的位置赋值', function (done) {
+    var fn = compile('7');
+    fn(true, function (err, ret1, ret2) {
+      should.equal(err, null);
+      ret1.should.equal(123);
+      ret2.should.equal(90);
+      fn(false, function (err, ret1, ret2) {
+        should.equal(err, null);
+        ret1.should.equal(456);
+        ret2.should.equal(78);
+        done();
+      });
+    });
+  });
   
 });
