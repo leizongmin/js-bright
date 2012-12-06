@@ -1768,13 +1768,10 @@ syntax.wrap = function (context) {
   }
 
   // 生成延迟执行代码
-  if (context.defers.length > 0) {
-    var indent = '    ';
+  //if (context.defers > 0) {
+    var indent = getIndentSpace(context);
     var defersCode = ['\n' + indent + '/* defer function start */',
                       indent + 'var $$_defers = [];'];
-    context.defers.forEach(function (fn) {
-      defersCode.push(indent + '$$_defers.push(' + fn + ');');
-    });
     defersCode.push(indent + 'var $$_oldCallback = $$_callback;');
     defersCode.push(indent + '$$_callback = $$_callback_global = function () {');
     defersCode.push(indent + '  var $$_args = arguments;');
@@ -1785,9 +1782,9 @@ syntax.wrap = function (context) {
     defersCode.push(indent + '};');
     defersCode.push(indent + '/* defer function end */\n');
     defersCode = defersCode.join('\n') + '\n';
-  } else {
-    defersCode = '';
-  }
+  //} else {
+  //  defersCode = '';
+  //}
 
   // 生成最终代码并返回
   var indent = getIndentSpace(context).substr(4);
@@ -1831,7 +1828,7 @@ syntax.parse = function (tokenList, isNested) {
     var context = {   
       args:   [],     // 参数列表，全局
       vars:   [],     // 变量列表，全局
-      defers: [],     // 延迟执行列表
+      defers: 0,      // 延迟执行数量
       tokenList:  tokenList,  // 剩下的单词列表
       code:   [],     // 生成的js代码
       indent: 2       // 缩进
@@ -1877,7 +1874,9 @@ syntax.parse = function (tokenList, isNested) {
 
         case 'var':
           needNextToken();
+          addLineNumber(firstT, 'START');
           parseVar(context, nextTs);
+          addLineNumber(firstT, 'END');
           break;
 
         case 'let':
@@ -1916,7 +1915,9 @@ syntax.parse = function (tokenList, isNested) {
 
         case 'defer':
           needNextToken();
+          addLineNumber(firstT, 'START');
           parseDefer(context, nextTs);
+          addLineNumber(firstT, 'END');
           break;
 
         case 'if':
@@ -2141,7 +2142,10 @@ var parseVar = function (context, tokenList) {
       }
     } else {
       if (t.type === TOKEN.IDENTIFIER) {
-        context.vars.push(t.text);
+        // 如果变量不在声明的变量列表中，则添加
+        if (context.vars.indexOf(t.text) === -1) {
+          context.vars.push(t.text);
+        }
         currName = t.text;
         brackets = [];
         initTokens = [];
@@ -2332,8 +2336,16 @@ var parseReturn = function (context, tokenList, isNested) {
  */
 var parseDefer = function (context, tokenList) {
   var lastT = tokenList[tokenList.length - 1];
+  var indent = getIndentSpace(context);
+  var indent2 = indent + '  ';
   var codeTop = 'function (error, $$_callback) {\n';
-  var codeBottom = '\n    }';
+  var codeBottom = '\n' + indent + '}';
+
+  var addDeferCode = function (code) {
+    context.defers++;
+    pushCodeLine(context, '$$_defers.push(' + code + ');');
+  };
+
   if (lastT.type === TOKEN.SYMBLE) {
     if (lastT.text === ')' && tokenList.length >= 3) {
       // defer xxx() 情况
@@ -2341,15 +2353,15 @@ var parseDefer = function (context, tokenList) {
       tokenList.forEach(function (t) {
         call += t.text;
       });
-      call = '      ' + call + ';\n      return $$_callback(null);';
-      context.defers.push(codeTop + call + codeBottom);
+      call = indent2 + call + ';\n' + indent2 + 'return $$_callback(null);';
+      addDeferCode(codeTop + call + codeBottom);
     } else if (lastT.text === '{' && tokenList.length === 1) {
       // defer {    情况
       var newContext = createNewContext(context);
-      newContext.indent = 3;
+      newContext.indent++;
       parseNested(newContext, true);
       var code = newContext.code.join('\n');
-      context.defers.push(codeTop + code + codeBottom);
+      addDeferCode(codeTop + code + codeBottom);
       context.tokenList = newContext.tokenList;
     } else {
       return throwError(lastT);
@@ -2360,8 +2372,8 @@ var parseDefer = function (context, tokenList) {
     tokenList.forEach(function (t) {
       call += t.text;
     });
-    call = '      ' + call + '();\n      return $$_callback(null);';
-    context.defers.push(codeTop + call + codeBottom);
+    call = indent2 + call + '();\n' + indent2 + 'return $$_callback(null);';
+    addDeferCode(codeTop + call + codeBottom);
   } else {
     return throwError(lastT);
   }

@@ -21,6 +21,19 @@ if (typeof(window) === "undefined") {
   /* function header end */
 
   try {
+
+    /* defer function start */
+    var $$_defers = [];
+    var $$_oldCallback = $$_callback;
+    $$_callback = $$_callback_global = function () {
+      var $$_args = arguments;
+      $$_runtime.runDefers($$_defers, $$_args[0], function (err) {
+        if (err) $$_runtime.error(err.stack);
+        $$_oldCallback.apply(null, $$_args);
+      });
+    };
+    /* defer function end */
+
     /* LINE:1 START */
     $$_runtime.conditionLoop(function () {
       return true;

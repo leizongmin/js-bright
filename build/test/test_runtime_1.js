@@ -22,6 +22,21 @@ if (typeof(window) === "undefined") {
 
   try {
     var n;
+
+    /* defer function start */
+    var $$_defers = [];
+    var $$_oldCallback = $$_callback;
+    $$_callback = $$_callback_global = function () {
+      var $$_args = arguments;
+      $$_runtime.runDefers($$_defers, $$_args[0], function (err) {
+        if (err) $$_runtime.error(err.stack);
+        $$_oldCallback.apply(null, $$_args);
+      });
+    };
+    /* defer function end */
+
+    /* LINE:1 START */
+    /* LINE:1 END */
     /* LINE:2 START */
     n = 60
     /* LINE:2 END */

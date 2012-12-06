@@ -1,7 +1,7 @@
 {
   "name":           "bright",
   "main":           "./index.js",
-  "version":        "0.0.6",
+  "version":        "0.0.7",
   "description":    "A tiny script language, add async/await support for javascript",
   "keywords":       ["async", "await", "compiler", "javascript", "language"],
   "author":         "Lei Zongmin <leizongmin@gmail.com>",
