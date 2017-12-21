@@ -3,6 +3,8 @@
 Bright.js
 ==========
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/leizongmin/js-bright.svg)](https://greenkeeper.io/)
+
 一种更优雅的JavaScript异步流程控制方式。
 
 动画排序演示：http://bright.ucdok.com/simple/sort.html
