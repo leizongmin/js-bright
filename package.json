@@ -29,7 +29,7 @@
     "should":       "*",
     "mocha":        ">= 1.2",
     "browserify":   ">= 1.16.5",
-    "uglify-js":    ">= 2.2.1"
+    "uglify-js":    ">=3.6.1"
   },
   "scripts": {
     "test":         "mocha -t 5000"
