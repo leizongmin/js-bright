@@ -27,7 +27,7 @@
   },
   "devDependencies": {
     "should":       "*",
-    "mocha":        ">= 1.2",
+    "mocha":        ">=7.1.1",
     "browserify":   ">= 1.16.5",
     "uglify-js":    ">= 2.2.1"
   },
